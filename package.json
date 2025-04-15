@@ -3,6 +3,8 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "deno.enable": true,
+  "deno.unstable": true,
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -38,4 +40,6 @@
     "tailwindcss": "^3.4.1",
     "vite": "^6.2.0"
   }
+
+  
 }

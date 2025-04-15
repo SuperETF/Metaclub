@@ -2,9 +2,10 @@ import { serve } from "https://deno.land/std/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 serve(async (req) => {
-  // ✅ OPTIONS preflight 대응
+  // ✅ Preflight 대응
   if (req.method === "OPTIONS") {
     return new Response("ok", {
+      status: 200,
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -13,40 +14,51 @@ serve(async (req) => {
     });
   }
 
-  const { user_id } = await req.json();
+  try {
+    const { user_id } = await req.json();
 
-  if (!user_id) {
-    return new Response(JSON.stringify({ error: "user_id is required" }), {
-      status: 400,
+    if (!user_id) {
+      return new Response(JSON.stringify({ error: "user_id is required" }), {
+        status: 400,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+      });
+    }
+
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(user_id);
+
+    if (error) {
+      return new Response(JSON.stringify({ success: false, error }), {
+        status: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+      });
+    }
+
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+    });
+
+  } catch (e) {
+    return new Response(JSON.stringify({ error: "Invalid JSON or unknown error" }), {
+      status: 500,
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "Content-Type",
       },
     });
   }
-
-  const supabaseAdmin = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
-
-  const { error } = await supabaseAdmin.auth.admin.deleteUser(user_id);
-
-  if (error) {
-    return new Response(JSON.stringify({ success: false, error }), {
-      status: 400,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-      },
-    });
-  }
-
-  return new Response(JSON.stringify({ success: true }), {
-    status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "Content-Type",
-    },
-  });
 });

@@ -114,9 +114,16 @@ const MyPage: React.FC = () => {
       body: JSON.stringify({ user_id: userId }),
     });
   
+    if (!res.ok) {
+      const error = await res.json();
+      console.error("❌ 유저 삭제 실패:", error);
+      return false;
+    }
+  
     const result = await res.json();
     return result.success;
   };
+  
   
   const handleDeleteAccount = () => {
     confirmAlert({
@@ -152,6 +159,7 @@ const MyPage: React.FC = () => {
       ],
     });
   };
+  
   
 
   return (
