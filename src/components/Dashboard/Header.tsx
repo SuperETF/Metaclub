@@ -42,7 +42,6 @@ const Header: React.FC = () => {
     if (location.pathname.startsWith("/write")) return "글쓰기";
     if (location.pathname.startsWith("/education/write")) return "강의 등록";
     if (location.pathname.startsWith("/quiz-result")) return "퀴즈 결과";
-    if (location.pathname.startsWith("/mypostpage")) return "마이페이지";
     return "대시보드";
   };
 

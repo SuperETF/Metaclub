@@ -3,6 +3,9 @@ import PageLayout from "../layouts/PageLayout";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
+import { toast } from "react-toastify";
+import { confirmAlert } from "react-confirm-alert";
+import "react-confirm-alert/src/react-confirm-alert.css";
 
 interface Profiles {
   id: string;
@@ -45,41 +48,27 @@ const MyPage: React.FC = () => {
         .eq("id", userData.user.id)
         .single();
 
-      if (error) {
-        console.error("프로필 불러오기 실패:", error.message);
-      } else {
-        setProfile(data as Profiles);
-      }
+      if (!error && data) setProfile(data as Profiles);
     };
 
     const fetchQuizResults = async () => {
       if (!user) return;
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("quiz_results")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("퀴즈 결과 불러오기 실패:", error.message);
-      } else {
-        setQuizResults(data || []);
-      }
+      setQuizResults(data || []);
     };
 
     const fetchUserPosts = async () => {
       if (!user) return;
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("posts")
         .select("id, title, created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("게시글 불러오기 실패:", error.message);
-      } else {
-        setPosts(data || []);
-      }
+      setPosts(data || []);
     };
 
     fetchProfile();
@@ -91,6 +80,79 @@ const MyPage: React.FC = () => {
     await supabase.auth.signOut();
     navigate("/dashboard");
   };
+
+  const deleteUserData = async (userId: string) => {
+    try {
+      const { data: resultIds } = await supabase
+        .from("quiz_results")
+        .select("id")
+        .eq("user_id", userId);
+      const resultIdList = resultIds?.map((r) => r.id) || [];
+
+      if (resultIdList.length > 0) {
+        await supabase.from("quiz_result_items").delete().in("result_id", resultIdList);
+      }
+
+      await supabase.from("quiz_results").delete().eq("user_id", userId);
+      await supabase.from("posts").delete().eq("user_id", userId);
+      await supabase.from("profiles").delete().eq("id", userId);
+
+      console.log("✅ 유저 데이터 전체 삭제 완료");
+      return true;
+    } catch (err) {
+      console.error("❌ 유저 데이터 삭제 실패:", err);
+      return false;
+    }
+  };
+
+  const callDeleteUserFunction = async (userId: string) => {
+    const res = await fetch("https://mivnacfecyugbbdwixv.functions.supabase.co/delete-user", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ user_id: userId }),
+    });
+  
+    const result = await res.json();
+    return result.success;
+  };
+  
+  const handleDeleteAccount = () => {
+    confirmAlert({
+      title: "회원 탈퇴 확인",
+      message: "회원 탈퇴 시 모든 정보가 삭제됩니다. 그래도 회원 탈퇴하시겠습니까?",
+      buttons: [
+        {
+          label: "네, 탈퇴할게요",
+          onClick: async () => {
+            if (!user) return;
+  
+            const success = await deleteUserData(user.id);
+            if (!success) {
+              toast.error("데이터 삭제 중 문제가 발생했습니다.");
+              return;
+            }
+  
+            const deleted = await callDeleteUserFunction(user.id);
+            if (!deleted) {
+              toast.error("계정 삭제에 실패했습니다. 관리자에게 문의해주세요.");
+              return;
+            }
+  
+            toast.success("회원 탈퇴가 완료되었습니다.");
+            await supabase.auth.signOut();
+            navigate("/dashboard");
+          },
+        },
+        {
+          label: "아니오",
+          onClick: () => {},
+        },
+      ],
+    });
+  };
+  
 
   return (
     <PageLayout>
@@ -152,10 +214,20 @@ const MyPage: React.FC = () => {
           </div>
         </div>
 
+        {/* 회원 탈퇴 */}
+        <div className="mt-6 text-center text-sm text-gray-400">
+          <button
+            onClick={handleDeleteAccount}
+            className="underline hover:text-red-500 transition"
+          >
+            회원 탈퇴하기
+          </button>
+        </div>
+
         {/* 홈으로 돌아가기 */}
         <button
           onClick={() => navigate("/dashboard")}
-          className="w-full mt-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-button font-medium cursor-pointer hover:bg-gray-50"
+          className="w-full mt-3 py-3 bg-white border border-gray-300 text-gray-700 rounded-button font-medium cursor-pointer hover:bg-gray-50"
         >
           홈으로 돌아가기
         </button>

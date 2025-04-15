@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
+import { toast } from "react-toastify";
 
 interface QuizQuestion {
   id: string;
@@ -23,8 +24,9 @@ const QuizStart: React.FC = () => {
   const [isCorrect, setIsCorrect] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [timeLeft, setTimeLeft] = useState(20);
-  const [isQuizAborted, setIsQuizAborted] = useState(false);
-  const [userAnswers, setUserAnswers] = useState<{ questionId: string; selected: number; isCorrect: boolean }[]>([]);
+  const [userAnswers, setUserAnswers] = useState<
+    { questionId: string; selected: number; isCorrect: boolean }[]
+  >([]);
 
   const QUIZ_KEY = `quiz_${quizId}_q${currentIndex}`;
 
@@ -36,11 +38,7 @@ const QuizStart: React.FC = () => {
         .eq("quiz_id", quizId)
         .order("created_at", { ascending: true });
 
-      if (error) {
-        console.error("퀴즈 불러오기 실패:", error.message);
-      } else {
-        setQuestions(data || []);
-      }
+      if (!error && data) setQuestions(data);
     };
     fetchQuestions();
   }, [quizId]);
@@ -50,16 +48,12 @@ const QuizStart: React.FC = () => {
 
     const now = Date.now();
     const stored = localStorage.getItem(QUIZ_KEY);
-
     if (!stored) {
-      const data = { startTime: now };
-      localStorage.setItem(QUIZ_KEY, JSON.stringify(data));
+      localStorage.setItem(QUIZ_KEY, JSON.stringify({ startTime: now }));
       setTimeLeft(20);
     } else {
-      const parsed = JSON.parse(stored);
-      const elapsed = Math.floor((now - parsed.startTime) / 1000);
-      const remaining = 20 - elapsed;
-      setTimeLeft(remaining > 0 ? remaining : 0);
+      const elapsed = Math.floor((now - JSON.parse(stored).startTime) / 1000);
+      setTimeLeft(Math.max(0, 20 - elapsed));
     }
   }, [quizId, currentIndex, questions.length]);
 
@@ -77,17 +71,13 @@ const QuizStart: React.FC = () => {
 
   const handleSelect = (index: number) => {
     if (selectedOption !== null) return;
-    setSelectedOption(index);
     const correct = index === currentQuestion.correct_answer;
+    setSelectedOption(index);
     setIsCorrect(correct);
     setShowResult(true);
     setUserAnswers((prev) => [
       ...prev,
-      {
-        questionId: currentQuestion.id,
-        selected: index,
-        isCorrect: correct,
-      },
+      { questionId: currentQuestion.id, selected: index, isCorrect: correct },
     ]);
     if (correct) setCorrectCount((prev) => prev + 1);
   };
@@ -97,7 +87,7 @@ const QuizStart: React.FC = () => {
 
     const resultData = {
       user_id: user.id.toString(),
-      quiz_id: quizId.toString(),
+      quiz_id: quizId,
       score: correctCount,
       total: questions.length,
       answered: currentIndex + 1,
@@ -115,19 +105,17 @@ const QuizStart: React.FC = () => {
       return null;
     }
 
-    // 문제별 결과 저장
     const itemData = userAnswers.map((ua) => ({
-      result_id: data.id, // ✅ 이게 맞는 컬럼명!
+      result_id: data.id,
       question_id: ua.questionId,
       user_answer: questions.find((q) => q.id === ua.questionId)?.options[ua.selected] ?? "",
       is_correct: ua.isCorrect,
     }));
-    
 
-    const { error: itemError } = await supabase.from("quiz_result_items").insert(itemData);
-    if (itemError) {
-      console.error("❌ 개별 문제 저장 실패:", itemError.message);
-    }
+    const { error: itemError } = await supabase
+      .from("quiz_result_items")
+      .insert(itemData);
+    if (itemError) console.error("❌ 문제 저장 실패:", itemError.message);
 
     return data.id;
   };
@@ -142,33 +130,36 @@ const QuizStart: React.FC = () => {
 
   const handleFinish = async () => {
     localStorage.removeItem(QUIZ_KEY);
-    const resultId = await saveQuizResult("completed");
-    if (resultId) {
-      navigate(`/quiz-result/${resultId}`);
-    } else {
-      alert("결과 저장에 실패했습니다. 다시 시도해주세요.");
+    if (!user) {
+      toast.info("비회원은 푼 기록이 저장되지 않습니다.");
+      setTimeout(() => navigate("/dashboard"), 1500);
+      return;
     }
+    const resultId = await saveQuizResult("completed");
+    if (resultId) navigate(`/quiz-result/${resultId}`);
+    else toast.error("결과 저장에 실패했습니다.");
   };
 
   const handleQuit = async () => {
     localStorage.removeItem(QUIZ_KEY);
-    setIsQuizAborted(true);
-    const resultId = await saveQuizResult("aborted");
-    if (resultId) {
-      navigate(`/quiz-result/${resultId}`);
+    if (!user) {
+      toast.info("비회원은 푼 기록이 저장되지 않습니다.");
+      setTimeout(() => navigate("/dashboard"), 1500);
+      return;
     }
+    const resultId = await saveQuizResult("aborted");
+    if (resultId) navigate(`/quiz-result/${resultId}`);
   };
 
   if (!currentQuestion) {
-    return (
-      <div className="pt-32 text-center text-gray-500">
-        문제를 불러오는 중입니다...
-      </div>
-    );
+    return <div className="pt-32 text-center text-gray-500">문제를 불러오는 중입니다...</div>;
   }
+
+  const isLastQuestion = currentIndex + 1 === questions.length;
 
   return (
     <div className="relative bg-gray-50 min-h-screen w-full max-w-screen-sm mx-auto pt-24 pb-12 px-4">
+      {/* 타이머 헤더 */}
       <div className="fixed top-14 left-0 right-0 bg-white shadow-sm z-10 px-4">
         <div className="max-w-screen-sm mx-auto">
           <div className="flex justify-between items-center py-3">
@@ -189,6 +180,7 @@ const QuizStart: React.FC = () => {
         </div>
       </div>
 
+      {/* 문제 및 보기 */}
       <div className="mt-6">
         <div className="bg-white p-5 rounded-2xl shadow">
           <p className="text-indigo-600 text-sm mb-2">객관식</p>
@@ -217,38 +209,24 @@ const QuizStart: React.FC = () => {
           ))}
         </div>
 
+        {/* 결과 & 해설 */}
         {showResult ? (
           <div className="mt-6 space-y-4">
-            <div
-              className={`text-center py-3 rounded-lg font-semibold ${
-                isCorrect ? "text-green-700 bg-green-100" : "text-red-700 bg-red-100"
+            <button
+              onClick={isLastQuestion ? handleFinish : handleNext}
+              className={`w-full text-center py-4 rounded-lg font-semibold shadow-sm transition ${
+                isCorrect
+                  ? "text-green-700 bg-green-100 hover:bg-green-200"
+                  : "text-red-700 bg-red-100 hover:bg-red-200"
               }`}
             >
-              {isCorrect ? "정답입니다! 👏" : "틀렸습니다 😢"}
-            </div>
+              {isCorrect ? "정답입니다! 다음 문제 풀기" : "틀렸습니다. 다음 문제 풀기"}
+            </button>
 
             <div className="bg-gray-100 p-4 rounded-xl">
               <h3 className="font-semibold mb-1 text-gray-800">해설</h3>
               <p className="text-sm text-gray-700">{currentQuestion.explanation}</p>
             </div>
-
-            {currentIndex + 1 < questions.length ? (
-              <button onClick={handleNext} className="btn-primary w-full mt-4">
-                다음 문제
-              </button>
-            ) : (
-              <div className="mt-6 p-5 bg-indigo-50 border border-indigo-200 rounded-xl shadow-sm">
-                <div className="text-center mb-3 text-indigo-700 font-semibold text-lg">
-                  퀴즈를 모두 풀었습니다!
-                </div>
-                <button
-                  onClick={handleFinish}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition duration-300"
-                >
-                  퀴즈 완료 및 결과 저장
-                </button>
-              </div>
-            )}
           </div>
         ) : (
           <div className="mt-4 flex justify-center">
