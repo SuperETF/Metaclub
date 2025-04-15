@@ -7,6 +7,10 @@ serve(async (req) => {
   if (!user_id) {
     return new Response(JSON.stringify({ error: "user_id is required" }), {
       status: 400,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "content-type",
+      },
     });
   }
 
@@ -18,8 +22,20 @@ serve(async (req) => {
   const { error } = await supabaseAdmin.auth.admin.deleteUser(user_id);
 
   if (error) {
-    return new Response(JSON.stringify({ success: false, error }), { status: 400 });
+    return new Response(JSON.stringify({ success: false, error }), {
+      status: 400,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "content-type",
+      },
+    });
   }
 
-  return new Response(JSON.stringify({ success: true }), { status: 200 });
+  return new Response(JSON.stringify({ success: true }), {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "content-type",
+    },
+  });
 });
