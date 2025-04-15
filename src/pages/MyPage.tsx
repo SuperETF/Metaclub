@@ -4,8 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
 import { toast } from "react-toastify";
-import { confirmAlert } from "react-confirm-alert";
-import "react-confirm-alert/src/react-confirm-alert.css";
+import "react-toastify/dist/ReactToastify.css";
 
 interface Profiles {
   id: string;
@@ -36,6 +35,8 @@ const MyPage: React.FC = () => {
   const [profile, setProfile] = useState<Profiles | null>(null);
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [showReasonModal, setShowReasonModal] = useState(false);
+  const [reason, setReason] = useState("");
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -81,86 +82,39 @@ const MyPage: React.FC = () => {
     navigate("/dashboard");
   };
 
-  const deleteUserData = async (userId: string) => {
-    try {
-      const { data: resultIds } = await supabase
-        .from("quiz_results")
-        .select("id")
-        .eq("user_id", userId);
-      const resultIdList = resultIds?.map((r) => r.id) || [];
-
-      if (resultIdList.length > 0) {
-        await supabase.from("quiz_result_items").delete().in("result_id", resultIdList);
-      }
-
-      await supabase.from("quiz_results").delete().eq("user_id", userId);
-      await supabase.from("posts").delete().eq("user_id", userId);
-      await supabase.from("profiles").delete().eq("id", userId);
-
-      console.log("✅ 유저 데이터 전체 삭제 완료");
-      return true;
-    } catch (err) {
-      console.error("❌ 유저 데이터 삭제 실패:", err);
-      return false;
-    }
-  };
-
-  const callDeleteUserFunction = async (userId: string) => {
-    const res = await fetch("https://mivnacfecyugbbdwixv.functions.supabase.co/delete-user", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+  const requestAccountDeletion = async () => {
+    const { error } = await supabase.from("delete_requests").insert([
+      {
+        user_id: user?.id,
+        reason: reason || null,
       },
-      body: JSON.stringify({ user_id: userId }),
-    });
-  
-    if (!res.ok) {
-      const error = await res.json();
-      console.error("❌ 유저 삭제 실패:", error);
-      return false;
+    ]);
+
+    if (error) {
+      toast.error("탈퇴 요청 중 문제가 발생했습니다.");
+      return;
     }
-  
-    const result = await res.json();
-    return result.success;
-  };
-  
-  
-  const handleDeleteAccount = () => {
-    confirmAlert({
-      title: "회원 탈퇴 확인",
-      message: "회원 탈퇴 시 모든 정보가 삭제됩니다. 그래도 회원 탈퇴하시겠습니까?",
-      buttons: [
-        {
-          label: "네, 탈퇴할게요",
-          onClick: async () => {
-            if (!user) return;
-  
-            const success = await deleteUserData(user.id);
-            if (!success) {
-              toast.error("데이터 삭제 중 문제가 발생했습니다.");
-              return;
-            }
-  
-            const deleted = await callDeleteUserFunction(user.id);
-            if (!deleted) {
-              toast.error("계정 삭제에 실패했습니다. 관리자에게 문의해주세요.");
-              return;
-            }
-  
-            toast.success("회원 탈퇴가 완료되었습니다.");
-            await supabase.auth.signOut();
-            navigate("/dashboard");
-          },
-        },
-        {
-          label: "아니오",
-          onClick: () => {},
-        },
-      ],
+
+    toast.success("탈퇴 요청이 접수되었습니다. 7일 이내 완전 삭제됩니다.", {
+      position: "top-center",
+      hideProgressBar: false,
+      autoClose: 4000,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      theme: "colored",
     });
+
+    await supabase.auth.signOut();
+    navigate("/dashboard");
   };
-  
-  
+
+  const confirmAccountDeletion = () => {
+    const confirmed = window.confirm("정말 탈퇴하시겠습니까?");
+    if (confirmed) {
+      setShowReasonModal(true);
+    }
+  };
 
   return (
     <PageLayout>
@@ -222,15 +176,48 @@ const MyPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 회원 탈퇴 */}
+        {/* 탈퇴 확인 버튼 */}
         <div className="mt-6 text-center text-sm text-gray-400">
           <button
-            onClick={handleDeleteAccount}
+            onClick={confirmAccountDeletion}
             className="underline hover:text-red-500 transition"
           >
             회원 탈퇴하기
           </button>
         </div>
+
+        {/* 탈퇴 사유 모달 */}
+        {showReasonModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
+              <h2 className="text-lg font-semibold mb-3">탈퇴 사유를 입력해주세요</h2>
+              <textarea
+                className="w-full border border-gray-300 p-2 rounded mb-4"
+                rows={4}
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="불편한 점이나 아쉬웠던 점이 있다면 남겨주세요"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setShowReasonModal(false)}
+                  className="bg-gray-200 px-4 py-2 rounded"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={() => {
+                    setShowReasonModal(false);
+                    requestAccountDeletion();
+                  }}
+                  className="bg-red-500 text-white px-4 py-2 rounded"
+                >
+                  탈퇴하기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 홈으로 돌아가기 */}
         <button
