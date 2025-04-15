@@ -1,5 +1,8 @@
 // tailwind.config.ts
-const config = {
+import type { Config } from 'tailwindcss';
+import plugin from 'tailwind-scrollbar-hide';
+
+const config: Config = {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
@@ -12,7 +15,7 @@ const config = {
       },
     },
   },
-  plugins: [],
+  plugins: [plugin],
 };
 
-export default config; // ✅ 타입 없어도 작동
+export default config;
