@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ✅ 기본 파란 버튼 */
+.btn-primary {
+  @apply px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-full shadow-sm transition-all;
+}
+
+/* ✅ 외곽선 버튼 */
+.btn-outline {
+  @apply px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 hover:bg-blue-50 rounded-full transition-all;
+}
+
+/* ✅ 고급 버튼 (그라데이션 + 그림자 + 반응형) */
+.btn-rounded {
+  @apply inline-flex items-center justify-center px-5 py-3 text-base font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:to-blue-700 rounded-full shadow-lg transition-transform duration-200 transform hover:scale-105;
+}
+
+/* ✅ 기타 유틸 */
+.rounded-button {
+  @apply rounded-full;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+} 
