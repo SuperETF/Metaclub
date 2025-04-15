@@ -2,6 +2,17 @@ import { serve } from "https://deno.land/std/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 serve(async (req) => {
+  // ✅ OPTIONS preflight 대응
+  if (req.method === "OPTIONS") {
+    return new Response("ok", {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+    });
+  }
+
   const { user_id } = await req.json();
 
   if (!user_id) {
@@ -9,7 +20,7 @@ serve(async (req) => {
       status: 400,
       headers: {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "content-type",
+        "Access-Control-Allow-Headers": "Content-Type",
       },
     });
   }
@@ -26,7 +37,7 @@ serve(async (req) => {
       status: 400,
       headers: {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "content-type",
+        "Access-Control-Allow-Headers": "Content-Type",
       },
     });
   }
@@ -35,7 +46,7 @@ serve(async (req) => {
     status: 200,
     headers: {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "content-type",
+      "Access-Control-Allow-Headers": "Content-Type",
     },
   });
 });
