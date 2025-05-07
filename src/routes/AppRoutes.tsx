@@ -16,6 +16,7 @@ import MyPostsPage from "../pages/MyPostPage";
 import Header from "../components/Dashboard/Header";
 import EducationWrite from "../pages/EducationWrite";
 import ResetPassword from "../pages/ResetPassword";
+import VerifyEmail from "../pages/VerifyEmail"; // ✅ 추가
 
 const LayoutWithTabs = () => (
   <>
@@ -33,6 +34,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/verify-email" element={<VerifyEmail />} /> {/* ✅ 추가됨 */}
 
       {/* ✅ 헤더 포함 라우트 그룹 */}
       <Route element={<LayoutWithTabs />}>

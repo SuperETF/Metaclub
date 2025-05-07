@@ -1,7 +1,7 @@
 // ✅ src/App.tsx
 
 import React, { useEffect } from "react";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, useNavigate, useLocation } from "react-router-dom";
 import {
   SessionContextProvider,
   useUser,
@@ -12,32 +12,40 @@ import AppRoutes from "./routes/AppRoutes";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-
 const AppInner: React.FC = () => {
   const user = useUser();
   const { isLoading } = useSessionContext();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // ✅ 자동 리디렉션 예외처리 (verify-email, reset-password 방지)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const type = params.get("type");
+
+    if (user && type !== "signup" && type !== "recovery") {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, location, navigate]);
 
   // ✅ 최초 로그인 시 1회 프로필 자동 저장
   useEffect(() => {
     const syncProfileIfNeeded = async () => {
       if (!user || !user.email) return;
 
-      // 1. 이미 프로필이 있는지 확인
       const { data: existing } = await supabase
         .from("profiles")
         .select("id")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (existing) return; // 이미 있으면 패스
+      if (existing) return;
 
-      // 2. user_metadata에서 정보 추출
       const { nickname, name, phone, marketing, agreement } = user.user_metadata || {};
 
-      // 3. insert
       const { error } = await supabase.from("profiles").insert([
         {
-          id: user.id,               // 반드시 auth.uid()와 동일
+          id: user.id,
           email: user.email,
           name: name || "",
           nickname: nickname || "",
