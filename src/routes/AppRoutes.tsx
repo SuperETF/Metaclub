@@ -1,3 +1,4 @@
+// src/routes/AppRoutes.tsx
 import React from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import ResponsiveContainer from "../layouts/ResponsiveContainer";
@@ -14,7 +15,7 @@ import PostDetailPage from "../pages/PostDetailPage";
 import MyPostsPage from "../pages/MyPostPage";
 import Header from "../components/Dashboard/Header";
 import EducationWrite from "../pages/EducationWrite";
-import ResetPassword from "../pages/ResetPassword"; // ✅ 추가
+import ResetPassword from "../pages/ResetPassword";
 
 const LayoutWithTabs = () => (
   <>
@@ -28,10 +29,10 @@ const LayoutWithTabs = () => (
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      {/* ✅ 로그인 & 회원가입 & 비밀번호 재설정 */}
+      {/* ✅ 로그인 & 회원가입 & 인증 관련 라우트 */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
-      <Route path="/reset-password" element={<ResetPassword />} /> {/* ✅ 추가됨 */}
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* ✅ 헤더 포함 라우트 그룹 */}
       <Route element={<LayoutWithTabs />}>
