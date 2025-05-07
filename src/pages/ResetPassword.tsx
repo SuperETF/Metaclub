@@ -14,21 +14,22 @@ const ResetPassword = () => {
 
   const navigate = useNavigate();
 
+  // ✅ Supabase 세션 인증 처리
   useEffect(() => {
     const run = async () => {
       const url = window.location.href.includes("#")
         ? window.location.href.replace("#", "?")
         : window.location.href;
-  
-      const { error } = await supabase.auth.exchangeCodeForSession(url);
-      if (error) {
+
+      const { data, error } = await supabase.auth.exchangeCodeForSession(url);
+
+      if (error || !data.session) {
         toast.error("링크가 유효하지 않거나 만료되었습니다.");
         navigate("/login", { replace: true });
       }
     };
     run();
   }, [navigate]);
-  
 
   useEffect(() => {
     if (!password) return setPasswordStrength("");
@@ -109,13 +110,19 @@ const ResetPassword = () => {
             </div>
             {errors.password && <p className="text-sm text-red-600">{errors.password}</p>}
 
-            {/* 강도 표시 */}
             {password && (
               <div className="mt-3 mb-6">
                 <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
                     className={`h-full ${getStrengthColor()}`}
-                    style={{ width: passwordStrength === "weak" ? "33%" : passwordStrength === "medium" ? "66%" : "100%" }}
+                    style={{
+                      width:
+                        passwordStrength === "weak"
+                          ? "33%"
+                          : passwordStrength === "medium"
+                            ? "66%"
+                            : "100%",
+                    }}
                   />
                 </div>
               </div>
@@ -141,7 +148,11 @@ const ResetPassword = () => {
             )}
 
             <button
-              className={`w-full mt-6 py-3 px-4 rounded-lg text-white font-medium ${password.length >= 8 && password === confirmPassword ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"}`}
+              className={`w-full mt-6 py-3 px-4 rounded-lg text-white font-medium ${
+                password.length >= 8 && password === confirmPassword
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-gray-400 cursor-not-allowed"
+              }`}
               disabled={password.length < 8 || password !== confirmPassword}
               onClick={handleResetPassword}
             >
