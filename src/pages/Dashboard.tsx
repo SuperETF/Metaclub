@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
-import { useUser } from "@supabase/auth-helpers-react";
 import Header from "../components/Dashboard/Header";
 import QuizStatusCard from "../components/Dashboard/QuizStatusCard";
 import LoanBanner from "../components/Dashboard/LoanBanner";
