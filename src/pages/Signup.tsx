@@ -1,4 +1,5 @@
-// src/pages/Signup.tsx
+// ✅ Supabase 이메일 인증 로직을 포함한 전체 Signup.tsx 코드
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
@@ -130,7 +131,7 @@ const Signup: React.FC = () => {
         <InputField label="닉네임" field="nickname" value={nickname} error={errors.nickname} onChange={handleInputChange} focusedField={focusedField} setFocusedField={setFocusedField} />
         <InputField label="휴대폰 번호" field="phone" value={phone} error={errors.phone} onChange={handleInputChange} focusedField={focusedField} setFocusedField={setFocusedField} />
 
-        <div className="flex items-center gap-2">  
+        <div className="flex items-center gap-2">
           <input type="checkbox" checked={agreement} onChange={() => setAgreement(!agreement)} />
           <span className="text-sm">
             개인정보 수집 및 이용 동의 <span className="text-red-500">*</span>
