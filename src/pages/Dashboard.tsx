@@ -1,8 +1,6 @@
-// src/pages/Dashboard.tsx
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
-import Header from "../components/Dashboard/Header";
 import QuizStatusCard from "../components/Dashboard/QuizStatusCard";
 import LoanBanner from "../components/Dashboard/LoanBanner";
 import HotPosts from "../components/Dashboard/HotPosts";
@@ -17,23 +15,32 @@ const Dashboard: React.FC = () => {
   const location = useLocation();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [eduCategory, setEduCategory] = useState("all");
+  const [scrollY, setScrollY] = useState(window.scrollY);
 
+  // ✅ 실시간 scrollY 추적
   useEffect(() => {
-    if (location.state?.category) {
-      setSelectedCategory(location.state.category);
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // ✅ location.state에서 category & scrollY 안전하게 처리
+  useEffect(() => {
+    const state = location.state as { category?: string; scrollY?: number } | null;
+
+    if (state?.category) {
+      setSelectedCategory(state.category);
     }
 
-    if (location.state?.scrollY !== undefined) {
+    if (typeof state?.scrollY === "number") {
       requestAnimationFrame(() => {
-        window.scrollTo({ top: location.state.scrollY, behavior: "instant" });
+        window.scrollTo({ top: state.scrollY, behavior: "instant" as ScrollBehavior });
       });
     }
   }, [location.state]);
 
   return (
     <div className="relative min-h-screen bg-gray-50">
-      <Header />
-
       <main className="pt-28 pb-20 px-4 max-w-screen-md mx-auto space-y-5">
         <SubjectButtons />
         <QuizStatusCard />
@@ -54,7 +61,7 @@ const Dashboard: React.FC = () => {
 
       <div className="fixed bottom-6 left-0 right-0 z-50 px-4">
         <div className="max-w-screen-md mx-auto flex justify-end">
-          <FloatingWriteButton scrollY={window.scrollY} selectedCategory={selectedCategory} />
+          <FloatingWriteButton scrollY={scrollY} selectedCategory={selectedCategory} />
         </div>
       </div>
     </div>
