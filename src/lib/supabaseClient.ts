@@ -1,7 +1,14 @@
-// lib/supabaseClient.ts
-import { createBrowserClient } from '@supabase/ssr';
+// supabaseClient.ts
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-export const supabase = createBrowserClient(
-  import.meta.env.VITE_SUPABASE_URL!,
-  import.meta.env.VITE_SUPABASE_ANON_KEY!
+export const supabase: SupabaseClient = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY,
+  {
+    auth: {
+      detectSessionInUrl: true,
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  }
 );

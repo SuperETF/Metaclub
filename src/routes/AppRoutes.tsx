@@ -14,10 +14,8 @@ import PostDetailPage from "../pages/PostDetailPage";
 import MyPostsPage from "../pages/MyPostPage";
 import Header from "../components/Dashboard/Header";
 import EducationWrite from "../pages/EducationWrite";
-import ResetPassword from "../pages/ResetPassword";
-import VerifyEmail from '../pages/VerifyEmail';
+import ResetPassword from "../pages/ResetPassword"; // ✅ 추가
 
-// ✅ 공통 레이아웃
 const LayoutWithTabs = () => (
   <>
     <Header />
@@ -30,9 +28,10 @@ const LayoutWithTabs = () => (
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      {/* ✅ 로그인 & 회원가입 */}
+      {/* ✅ 로그인 & 회원가입 & 비밀번호 재설정 */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/reset-password" element={<ResetPassword />} /> {/* ✅ 추가됨 */}
 
       {/* ✅ 헤더 포함 라우트 그룹 */}
       <Route element={<LayoutWithTabs />}>
@@ -46,8 +45,6 @@ const AppRoutes: React.FC = () => {
         <Route path="/write" element={<WritePage />} />
         <Route path="/write/:id" element={<WritePage />} />
         <Route path="/education/write" element={<EducationWrite />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
       </Route>
 
       {/* ✅ 기본 경로 */}
