@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
 interface EducationPost {
@@ -14,92 +14,69 @@ interface Props {
   category: string;
 }
 
+const CARD_HEIGHT = 110;   // 카드 높이(px)
+const GAP = 12;            // 간격(px)
+const VISIBLE = 4;         // 한 번에 보일 카드 수
+const MAX_HEIGHT = CARD_HEIGHT * VISIBLE + GAP * (VISIBLE - 1); // 516px
+
 const EducationBoard: React.FC<Props> = ({ category }) => {
   const [items, setItems] = useState<EducationPost[]>([]);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      let query = supabase
+    (async () => {
+      let q = supabase
         .from("education_posts")
         .select("*")
         .order("created_at", { ascending: false });
-
-      if (category !== "all") {
-        query = query.eq("category", category);
-      }
-
-      const { data, error } = await query;
+      if (category !== "all") q = q.eq("category", category);
+      const { data, error } = await q;
       if (!error && data) setItems(data);
-    };
-
-    fetchPosts();
+    })();
   }, [category]);
-
-  // ✅ 마우스 클릭 드래그 스크롤 기능
-  useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    let isDown = false;
-    let startX = 0;
-    let scrollLeft = 0;
-
-    const start = (e: MouseEvent) => {
-      isDown = true;
-      container.classList.add("grabbing");
-      startX = e.pageX - container.offsetLeft;
-      scrollLeft = container.scrollLeft;
-    };
-
-    const end = () => {
-      isDown = false;
-      container.classList.remove("grabbing");
-    };
-
-    const move = (e: MouseEvent) => {
-      if (!isDown) return;
-      e.preventDefault();
-      const x = e.pageX - container.offsetLeft;
-      const walk = (x - startX) * 1.5;
-      container.scrollLeft = scrollLeft - walk;
-    };
-
-    container.addEventListener("mousedown", start);
-    container.addEventListener("mouseleave", end);
-    container.addEventListener("mouseup", end);
-    container.addEventListener("mousemove", move);
-
-    return () => {
-      container.removeEventListener("mousedown", start);
-      container.removeEventListener("mouseleave", end);
-      container.removeEventListener("mouseup", end);
-      container.removeEventListener("mousemove", move);
-    };
-  }, []);
 
   return (
     <div
-  ref={scrollRef}
-  className="overflow-x-auto scroll-smooth touch-pan-x scrollbar-hide"
->
-  <div className="flex gap-4 snap-x snap-mandatory cursor-grab select-none">
-    {items.map((item) => (
-      <div key={item.id} className="min-w-[250px] flex-shrink-0 bg-gray-50 rounded-lg p-4 snap-start">
-            <img
-              src={item.image_url}
-              alt={item.title}
-              className="w-full h-32 object-cover rounded-md mb-2"
-            />
-            <h3 className="font-semibold text-sm mb-1">{item.title}</h3>
-            <p className="text-xs text-gray-600">{item.description}</p>
-          </div>
+      className="overflow-y-auto scrollbar-hide px-4"
+      style={{
+        maxHeight: `${MAX_HEIGHT}px`,
+        paddingRight: "2px",
+      }}
+    >
+      <div className="space-y-3">
+        {items.length === 0 && (
+          <p className="text-sm text-gray-400 text-center py-4">
+            등록된 정보가 없습니다.
+          </p>
+        )}
+
+        {items.map((item) => (
+          <a
+            key={item.id}
+            href={`/education/${item.category}/${item.id}`}
+            className="flex items-start gap-4 p-4 bg-white rounded-xl shadow-md hover:shadow-lg transition duration-200"
+            style={{ height: `${CARD_HEIGHT}px` }}
+          >
+            {/* 왼쪽에 고화질 이미지(80×80px) */}
+            <div className="w-20 h-20 min-w-[80px] rounded bg-gray-100 overflow-hidden flex-shrink-0">
+              <img
+                src={item.image_url}
+                alt={item.title}
+                className="w-full h-full object-cover object-center"
+              />
+            </div>
+
+            {/* 우측 텍스트 */}
+            <div className="flex flex-col justify-between overflow-hidden">
+              <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-1">
+                {item.title}
+              </h3>
+              <p className="text-xs text-gray-600 mt-1 line-clamp-1">
+                {item.description || "소개 문구 없음"}
+              </p>
+            </div>
+          </a>
         ))}
       </div>
-
-      {items.length === 0 && (
-        <p className="text-sm text-gray-400 text-center py-4">등록된 정보가 없습니다.</p>
-      )}
     </div>
   );
 };

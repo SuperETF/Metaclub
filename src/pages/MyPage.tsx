@@ -38,80 +38,66 @@ const MyPage: React.FC = () => {
   const [showReasonModal, setShowReasonModal] = useState(false);
   const [reason, setReason] = useState("");
 
+  // ▶ 로그인 가드: 로그인 안 됐으면 대시보드로
   useEffect(() => {
-    const fetchProfile = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return;
+    if (!user) {
+      toast.info("로그인이 필요합니다.", { position: "top-center", autoClose: 2000 });
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, navigate]);
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("name, nickname, phone, bio")
-        .eq("id", userData.user.id)
-        .single();
+  // ▶ 사용자 데이터 로드
+  useEffect(() => {
+    if (!user) return;
 
-      if (!error && data) setProfile(data as Profiles);
-    };
+    // 내 프로필
+    supabase
+      .from("profiles")
+      .select("name, nickname, phone, bio")
+      .eq("id", user.id)
+      .single()
+      .then(({ data, error }) => {
+        if (!error && data) setProfile(data as Profiles);
+      });
 
-    const fetchQuizResults = async () => {
-      if (!user) return;
-      const { data } = await supabase
-        .from("quiz_results")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      setQuizResults(data || []);
-    };
+    // 내가 푼 퀴즈
+    supabase
+      .from("quiz_results")
+      .select("id, quiz_id, score, total, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setQuizResults(data || []));
 
-    const fetchUserPosts = async () => {
-      if (!user) return;
-      const { data } = await supabase
-        .from("posts")
-        .select("id, title, created_at")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      setPosts(data || []);
-    };
-
-    fetchProfile();
-    fetchQuizResults();
-    fetchUserPosts();
+    // 내가 쓴 게시물
+    supabase
+      .from("posts")
+      .select("id, title, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setPosts(data || []));
   }, [user]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate("/dashboard");
+    navigate("/dashboard", { replace: true });
   };
 
   const requestAccountDeletion = async () => {
     const { error } = await supabase.from("delete_requests").insert([
-      {
-        user_id: user?.id,
-        reason: reason || null,
-      },
+      { user_id: user?.id, reason: reason || null },
     ]);
-
-    if (error) {
-      toast.error("탈퇴 요청 중 문제가 발생했습니다.");
-      return;
-    }
+    if (error) return toast.error("탈퇴 요청 중 문제가 발생했습니다.");
 
     toast.success("탈퇴 요청이 접수되었습니다. 7일 이내 완전 삭제됩니다.", {
       position: "top-center",
-      hideProgressBar: false,
       autoClose: 4000,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      theme: "colored",
     });
-
     await supabase.auth.signOut();
-    navigate("/dashboard");
+    navigate("/dashboard", { replace: true });
   };
 
   const confirmAccountDeletion = () => {
-    const confirmed = window.confirm("정말 탈퇴하시겠습니까?");
-    if (confirmed) {
+    if (window.confirm("정말 탈퇴하시겠습니까?")) {
       setShowReasonModal(true);
     }
   };
@@ -133,7 +119,7 @@ const MyPage: React.FC = () => {
               </p>
               <button
                 onClick={() => navigate("/edit-profile")}
-                className="mt-2 text-xs border border-gray-300 rounded-button px-2 py-1 text-gray-600 cursor-pointer hover:bg-gray-50"
+                className="mt-2 text-xs border border-gray-300 rounded px-2 py-1 text-gray-600 hover:bg-gray-50"
               >
                 프로필 편집
               </button>
@@ -147,9 +133,9 @@ const MyPage: React.FC = () => {
           <div className="divide-y">
             <div
               className="py-3 flex justify-between items-center cursor-pointer"
-              onClick={() => {
-                if (quizResults.length > 0) navigate(`/quiz-result/${quizResults[0].id}`);
-              }}
+              onClick={() =>
+                quizResults.length > 0 && navigate(`/quiz-result/${quizResults[0].id}`)
+              }
             >
               <div className="flex items-center">
                 <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center mr-3">
@@ -222,7 +208,7 @@ const MyPage: React.FC = () => {
         {/* 홈으로 돌아가기 */}
         <button
           onClick={() => navigate("/dashboard")}
-          className="w-full mt-3 py-3 bg-white border border-gray-300 text-gray-700 rounded-button font-medium cursor-pointer hover:bg-gray-50"
+          className="w-full mt-3 py-3 bg-white border border-gray-300 text-gray-700 rounded font-medium hover:bg-gray-50"
         >
           홈으로 돌아가기
         </button>
@@ -230,7 +216,7 @@ const MyPage: React.FC = () => {
         {/* 로그아웃 */}
         <button
           onClick={handleLogout}
-          className="w-full mt-3 py-3 bg-gray-200 text-gray-700 rounded-button font-medium cursor-pointer hover:bg-gray-300"
+          className="w-full mt-3 py-3 bg-gray-200 text-gray-700 rounded font-medium hover:bg-gray-300"
         >
           로그아웃
         </button>

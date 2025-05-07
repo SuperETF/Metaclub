@@ -67,7 +67,7 @@ const LoanBanner: React.FC = () => {
       <div className="bg-white bg-opacity-60 backdrop-blur-md border border-blue-200 rounded-lg p-3 text-center shadow-sm text-sm text-blue-800">
         👀 알리고 싶은 게 있나요?{" "}
         <a
-          href="https://example.com/advertise"
+          href="https://tally.so/r/mJg0B7"
           target="_blank"
           rel="noopener noreferrer"
           className="text-blue-600 font-semibold underline hover:text-blue-800"

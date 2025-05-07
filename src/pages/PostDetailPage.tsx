@@ -1,4 +1,4 @@
-// ✅ 최종 리팩토링: RLS 대응 + 삭제 제한 + UX 유지
+// ✅ 최종 리팩토링: 댓글 저장, 조회, 수정/삭제, 반응형 및 권한 대응 포함
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
@@ -21,6 +21,8 @@ const PostDetailPage: React.FC = () => {
   const [post, setPost] = useState<any>(null);
   const [comments, setComments] = useState<any[]>([]);
   const [commentText, setCommentText] = useState("");
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [currentReaction, setCurrentReaction] = useState<"like" | "dislike" | null>(null);
@@ -42,6 +44,20 @@ const PostDetailPage: React.FC = () => {
         .eq("user_id", user.id)
         .maybeSingle();
       setCurrentReaction(reaction?.reaction_type ?? null);
+    }
+  };
+
+  const loadComments = async () => {
+    const { data, error } = await supabase
+      .from("comments")
+      .select("*")
+      .eq("post_id", id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("❌ 댓글 불러오기 실패:", error.message);
+    } else {
+      setComments(data || []);
     }
   };
 
@@ -71,6 +87,7 @@ const PostDetailPage: React.FC = () => {
       }
 
       await refreshPost();
+      await loadComments();
     };
 
     trackView();
@@ -89,9 +106,7 @@ const PostDetailPage: React.FC = () => {
       setCurrentReaction(null);
     } else {
       if (currentReaction === null) {
-        await supabase
-          .from("post_reactions")
-          .insert({ post_id: id, user_id: user.id, reaction_type: type });
+        await supabase.from("post_reactions").insert({ post_id: id, user_id: user.id, reaction_type: type });
       } else {
         await supabase
           .from("post_reactions")
@@ -130,130 +145,80 @@ const PostDetailPage: React.FC = () => {
       ]);
 
       if (!error) {
-        setComments((prev) => [
-          {
-            nickname: profile?.nickname || "익명",
-            content: commentText,
-            created_at: new Date().toISOString(),
-          },
-          ...prev,
-        ]);
         setCommentText("");
+        await loadComments();
       }
     } catch (err) {
       console.error("댓글 등록 중 오류:", err);
     }
   };
 
-  const confirmDelete = async () => {
-    setShowDeleteConfirm(false);
+  const handleEditComment = async (commentId: string) => {
     const { error } = await supabase
-      .from("posts")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", user?.id); // ✅ 본인 글만 삭제 허용
+      .from("comments")
+      .update({ content: editText })
+      .eq("id", commentId)
+      .eq("user_id", user?.id);
 
-    if (error) {
-      toast.error("게시글 삭제에 실패했습니다.");
-      console.error("삭제 실패:", error.message);
+    if (!error) {
+      toast.success("댓글이 수정되었습니다.");
+      setEditingCommentId(null);
+      setEditText("");
+      await loadComments();
     } else {
-      toast.success("게시글이 삭제되었습니다 🗑️");
-      navigate("/dashboard");
+      toast.error("수정 실패");
     }
   };
 
-  if (!post) return <div className="pt-28 text-center">로딩 중...</div>;
+  const handleDeleteComment = async (commentId: string) => {
+    const { error } = await supabase
+      .from("comments")
+      .delete()
+      .eq("id", commentId)
+      .eq("user_id", user?.id);
+
+    if (!error) {
+      toast.success("댓글이 삭제되었습니다.");
+      await loadComments();
+    } else {
+      toast.error("삭제 실패");
+    }
+  };
 
   return (
     <div className="pt-28 pb-20 px-4 max-w-screen-md mx-auto">
-      <div className="flex justify-between items-center mb-2">
-        <div>
+      {post && (
+        <div className="mb-6 bg-white p-5 rounded-xl shadow">
           <div className="text-sm text-blue-600 font-medium mb-1">
-            {categoryMap[post.category] || post.category}
+  {categoryMap[post.category] || post.category}
+</div>
+<h1 className="text-2xl font-bold mb-2">{post.title}</h1>
+          <div className="text-sm text-gray-500 mb-3">
+            {post.author} · {formatDate(post.created_at)}
           </div>
-          <h1 className="text-2xl font-bold">{post.title}</h1>
-        </div>
-
-        {user?.id === post.user_id && (
-          <div className="relative">
+          <p className="text-gray-800 whitespace-pre-wrap">{post.content}</p>
+          <div className="flex justify-start gap-4 mt-4 pt-3 border-t border-gray-100 text-sm text-gray-500">
             <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="text-sm border px-2 py-1 rounded text-gray-600 hover:bg-gray-100"
+              onClick={() => handleReaction("like")}
+              className={`flex items-center gap-1 px-3 py-1 rounded text-sm font-medium transition ${currentReaction === "like" ? "bg-red-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
             >
-              더보기
+              <i className="fas fa-thumbs-up"></i> {Math.max(post.likes ?? 0, 0)}
             </button>
-            {showMenu && (
-              <div className="absolute right-0 mt-2 w-28 bg-white shadow rounded text-sm z-10">
-                <button
-                  className="block w-full px-4 py-2 hover:bg-gray-50 text-left"
-                  onClick={() => navigate(`/write/${id}`)}
-                >
-                  수정하기
-                </button>
-                <button
-                  className="block w-full px-4 py-2 text-red-500 hover:bg-gray-50 text-left"
-                  onClick={() => {
-                    setShowMenu(false);
-                    setShowDeleteConfirm(true);
-                  }}
-                >
-                  삭제하기
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center">
-          <div className="bg-white rounded-xl p-6 w-4/5 max-w-sm">
-            <h3 className="text-lg font-medium mb-3">게시물 삭제</h3>
-            <p className="text-gray-600 mb-4">정말로 이 게시물을 삭제하시겠습니까?</p>
-            <div className="flex justify-end space-x-3">
-              <button
-                className="px-4 py-2 border rounded text-gray-600"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                취소
-              </button>
-              <button
-                className="px-4 py-2 bg-red-500 text-white rounded"
-                onClick={confirmDelete}
-              >
-                삭제
-              </button>
-            </div>
+            <button
+              onClick={() => handleReaction("dislike")}
+              className={`flex items-center gap-1 px-3 py-1 rounded text-sm font-medium transition ${currentReaction === "dislike" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+            >
+              <i className="fas fa-thumbs-down"></i> {Math.max(post.dislikes ?? 0, 0)}
+            </button>
+            <span className="flex items-center gap-1 text-sm text-gray-500">
+              <i className="fas fa-eye"></i> {post.views}
+            </span>
           </div>
         </div>
       )}
 
-      <div className="text-sm text-gray-500 mb-4">
-        {post.author} · {formatDate(post.created_at)}
-      </div>
-
-      <div className="bg-white p-5 rounded-xl shadow mb-6">
-        <p className="text-gray-800 whitespace-pre-wrap">{post.content}</p>
-        <div className="flex justify-start gap-4 mt-4 pt-3 border-t border-gray-100 text-sm text-gray-500">
-          <button
-            onClick={() => handleReaction("like")}
-            className={`px-3 py-1 rounded ${currentReaction === "like" ? "bg-red-500 text-white" : "bg-gray-100 text-gray-700"}`}
-          >
-            👍 좋아요 {Math.max(post.likes ?? 0, 0)}
-          </button>
-          <button
-            onClick={() => handleReaction("dislike")}
-            className={`px-3 py-1 rounded ${currentReaction === "dislike" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-700"}`}
-          >
-            👎 싫어요 {Math.max(post.dislikes ?? 0, 0)}
-          </button>
-          <span>👁 조회수 {post.views}</span>
-        </div>
-      </div>
-
       <div className="bg-white rounded-xl shadow p-5">
         <h2 className="font-semibold mb-3">댓글 {comments.length}</h2>
-
         {user ? (
           <div className="flex items-center mb-4">
             <input
@@ -287,7 +252,32 @@ const PostDetailPage: React.FC = () => {
                 <span className="font-medium">{comment.nickname}</span>
                 <span className="text-gray-400 text-xs">{formatDate(comment.created_at)}</span>
               </div>
-              <p className="text-gray-800">{comment.content}</p>
+              {editingCommentId === comment.id ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    className="border px-2 py-1 rounded flex-1"
+                  />
+                  <button onClick={() => handleEditComment(comment.id)} className="text-blue-600 text-sm">저장</button>
+                  <button onClick={() => setEditingCommentId(null)} className="text-gray-400 text-sm">취소</button>
+                </div>
+              ) : (
+                <p className="text-gray-800 whitespace-pre-wrap">{comment.content}</p>
+              )}
+              {user?.id === comment.user_id && (
+                <div className="flex gap-2 mt-1 text-xs text-gray-400">
+                  <button
+                    onClick={() => {
+                      setEditingCommentId(comment.id);
+                      setEditText(comment.content);
+                    }}
+                  >
+                    수정
+                  </button>
+                  <button onClick={() => handleDeleteComment(comment.id)}>삭제</button>
+                </div>
+              )}
             </div>
           ))}
         </div>

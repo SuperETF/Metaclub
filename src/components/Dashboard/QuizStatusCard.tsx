@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
-import { BrainCircuit, Dumbbell, ActivitySquare } from "lucide-react"; // 아이콘 추가
+import { useNavigate } from "react-router-dom";
+import { BrainCircuit, Dumbbell, ActivitySquare } from "lucide-react";
 
 interface QuizResult {
   id: string;
@@ -13,12 +14,13 @@ interface QuizResult {
 
 const QuizStatusCard: React.FC = () => {
   const user = useUser();
+  const navigate = useNavigate();
   const [latestResult, setLatestResult] = useState<QuizResult | null>(null);
 
   const quizNameMap: Record<string, { label: string; icon: React.ReactNode }> = {
     basic: {
       label: "기초해부학",
-      icon: <Dumbbell size={20} className="text-white" />, // 예시
+      icon: <Dumbbell size={20} className="text-white" />,
     },
     functional: {
       label: "기능해부학",
@@ -31,9 +33,8 @@ const QuizStatusCard: React.FC = () => {
   };
 
   useEffect(() => {
-    const fetchLatestResult = async () => {
-      if (!user) return;
-
+    if (!user) return;
+    (async () => {
       const { data, error } = await supabase
         .from("quiz_results")
         .select("id, quiz_id, score, total, created_at")
@@ -42,12 +43,8 @@ const QuizStatusCard: React.FC = () => {
         .limit(1)
         .maybeSingle();
 
-      if (!error && data) {
-        setLatestResult(data);
-      }
-    };
-
-    fetchLatestResult();
+      if (!error && data) setLatestResult(data);
+    })();
   }, [user]);
 
   const percentage =
@@ -64,7 +61,10 @@ const QuizStatusCard: React.FC = () => {
     <div className="bg-white rounded-xl p-4 mb-5 shadow-sm">
       <div className="flex justify-between items-center mb-3">
         <h2 className="font-bold text-base">나의 퀴즈 현황</h2>
-        <div className="flex items-center text-sm text-blue-500 cursor-pointer">
+        <div
+          className="flex items-center text-sm text-blue-500 cursor-pointer"
+          onClick={() => navigate("/mypage")}
+        >
           <span className="font-medium">전체보기</span>
           <i className="fas fa-chevron-right ml-1 text-xs"></i>
         </div>
@@ -84,12 +84,14 @@ const QuizStatusCard: React.FC = () => {
             </div>
           </div>
           <div className="flex flex-col items-end">
-            <span className="text-sm font-medium text-blue-500">{percentage}%</span>
+            <span className="text-sm font-medium text-blue-500">
+              {percentage}%
+            </span>
             <div className="w-16 h-1.5 bg-gray-200 rounded-full mt-1">
               <div
                 className="h-full bg-blue-500 rounded-full"
                 style={{ width: `${percentage}%` }}
-              ></div>
+              />
             </div>
           </div>
         </div>

@@ -55,7 +55,13 @@ const EditProfile: React.FC = () => {
     <PageLayout>
       <div className="max-w-screen-md mx-auto px-4">
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <h1 className="text-xl font-bold mb-6">프로필 수정</h1>
+          <h1 className="text-xl font-bold mb-4">프로필 수정</h1>
+
+          {/* 보안 안내 문구 */}
+          <p className="text-sm text-gray-600 mb-6">
+            * 본인 외에는 이름 및 휴대폰 번호를 조회할 수 없으며, 
+            오직 닉네임과 소개글만 확인할 수 있습니다.
+          </p>
 
           <div className="space-y-4">
             <div>

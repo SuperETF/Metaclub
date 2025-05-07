@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { useUser } from "@supabase/auth-helpers-react";
 
 interface Props {
@@ -9,17 +8,15 @@ interface Props {
 
 const categories = [
   { label: "전체", value: "all" },
+  { label: "무료 강의", value: "free" },
   { label: "웨이트 트레이닝", value: "weight" },
   { label: "재활 트레이닝", value: "rehab" },
   { label: "필라테스", value: "pila" },
   { label: "운동지도", value: "guide" },
-  { label: "무료 강의", value: "free" },
 ];
 
 const EducationTabs: React.FC<Props> = ({ selected, onChange }) => {
-  const navigate = useNavigate();
   const user = useUser();
-  const isAdmin = user?.user_metadata?.role === "admin";
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -64,38 +61,25 @@ const EducationTabs: React.FC<Props> = ({ selected, onChange }) => {
   }, []);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-      {/* 카테고리 탭들 */}
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-5 gap-3 px-4">
       <div
         ref={scrollRef}
-        className="flex gap-2 overflow-x-scroll -mx-2 px-2 scroll-smooth touch-pan-x scrollbar-hide cursor-grab select-none"
+        className="flex gap-2 overflow-x-auto scrollbar-hide touch-pan-x -mx-2 px-2 pb-1 select-none"
       >
         {categories.map((cat) => (
           <button
             key={cat.value}
             onClick={() => onChange(cat.value)}
-            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition ${
+            className={`flex-shrink-0 px-4 py-2 text-sm rounded-full font-medium transition whitespace-nowrap ${
               selected === cat.value
-                ? "bg-blue-500 text-white"
-                : "bg-gray-100 text-gray-700"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             {cat.label}
           </button>
         ))}
       </div>
-
-      {/* ✅ 관리자만 보이는 버튼 */}
-      {isAdmin && (
-        <div className="sm:ml-4">
-          <button
-            onClick={() => navigate("/education/write")}
-            className="px-4 py-1.5 text-sm font-medium bg-indigo-500 text-white rounded-full hover:bg-indigo-600 transition"
-          >
-            강의 등록
-          </button>
-        </div>
-      )}
     </div>
   );
 };

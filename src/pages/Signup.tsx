@@ -1,4 +1,4 @@
-// ✅ src/pages/Signup.tsx (이메일 인증 유지 + 최초 로그인 시 프로필 자동 저장 구조)
+// src/pages/Signup.tsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
@@ -34,7 +34,7 @@ const Signup: React.FC = () => {
     const timer = setTimeout(async () => {
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
       const exists = await checkEmailExists(email);
-      setErrors((prev) => ({ ...prev, email: exists ? "이미 등록된 이메일입니다" : "" }));
+      setErrors(prev => ({ ...prev, email: exists ? "이미 등록된 이메일입니다" : "" }));
     }, 500);
     return () => clearTimeout(timer);
   }, [email]);
@@ -47,16 +47,37 @@ const Signup: React.FC = () => {
 
   const handleInputChange = (field: string, value: string) => {
     switch (field) {
-      case "email": setEmail(value); break;
-      case "password": setPassword(value); setErrors({ ...errors, password: validatePassword(value) }); break;
-      case "confirmPassword": setConfirmPassword(value); setErrors({ ...errors, confirmPassword: validateConfirmPassword(value) }); break;
-      case "name": setName(value); setErrors({ ...errors, name: validateName(value) }); break;
-      case "nickname": setNickname(value); setErrors({ ...errors, nickname: validateNickname(value) }); break;
-      case "phone":
-        const formatted = value.replace(/[^0-9]/g, "").replace(/^([0-9]{0,3})([0-9]{0,4})([0-9]{0,4})$/, (_, p1, p2, p3) => [p1, p2, p3].filter(Boolean).join("-")).substring(0, 13);
+      case "email":
+        setEmail(value);
+        break;
+      case "password":
+        setPassword(value);
+        setErrors({ ...errors, password: validatePassword(value) });
+        break;
+      case "confirmPassword":
+        setConfirmPassword(value);
+        setErrors({ ...errors, confirmPassword: validateConfirmPassword(value) });
+        break;
+      case "name":
+        setName(value);
+        setErrors({ ...errors, name: validateName(value) });
+        break;
+      case "nickname":
+        setNickname(value);
+        setErrors({ ...errors, nickname: validateNickname(value) });
+        break;
+      case "phone": {
+        const formatted = value
+          .replace(/[^0-9]/g, "")
+          .replace(
+            /^([0-9]{0,3})([0-9]{0,4})([0-9]{0,4})$/,
+            (_, p1, p2, p3) => [p1, p2, p3].filter(Boolean).join("-")
+          )
+          .substring(0, 13);
         setPhone(formatted);
         setErrors({ ...errors, phone: validatePhone(formatted) });
         break;
+      }
     }
   };
 
@@ -76,15 +97,16 @@ const Signup: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid) return;
-  
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/verify-email`,
         data: { nickname, name, phone, marketing, agreement },
       },
     });
-  
+
     if (error) {
       toast.error(
         error.message.includes("User already registered")
@@ -93,11 +115,10 @@ const Signup: React.FC = () => {
       );
       return;
     }
-  
+
     toast.success("회원가입 완료! 이메일을 확인해주세요.");
     navigate("/login");
   };
-  
 
   return (
     <MobileLayout>
@@ -109,7 +130,7 @@ const Signup: React.FC = () => {
         <InputField label="닉네임" field="nickname" value={nickname} error={errors.nickname} onChange={handleInputChange} focusedField={focusedField} setFocusedField={setFocusedField} />
         <InputField label="휴대폰 번호" field="phone" value={phone} error={errors.phone} onChange={handleInputChange} focusedField={focusedField} setFocusedField={setFocusedField} />
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">  
           <input type="checkbox" checked={agreement} onChange={() => setAgreement(!agreement)} />
           <span className="text-sm">
             개인정보 수집 및 이용 동의 <span className="text-red-500">*</span>

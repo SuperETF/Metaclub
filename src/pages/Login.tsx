@@ -11,27 +11,41 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  // 비밀번호 재설정 모달 상태
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSent, setResetSent] = useState(false);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast.error(getFriendlyError(error));
       return;
     }
-
     if (!data.user.email_confirmed_at) {
       toast.warning("❗ 이메일 인증이 완료되지 않았습니다. 이메일을 확인해주세요.");
       await supabase.auth.signOut();
       return;
     }
-
     toast.success("로그인 성공!");
     navigate("/dashboard");
+  };
+
+  const handleResetRequest = async () => {
+    if (!resetEmail) {
+      toast.error("이메일을 입력해주세요.");
+      return;
+    }
+    const { data, error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) {
+      toast.error(getFriendlyError(error));
+    } else {
+      setResetSent(true);
+      toast.success("재설정 링크를 이메일로 보냈습니다.");
+    }
   };
 
   return (
@@ -76,10 +90,65 @@ const Login: React.FC = () => {
         </form>
 
         <div className="flex justify-between text-sm text-gray-500 mt-4">
-          <button onClick={() => navigate("/find")}>아이디/비밀번호 찾기</button>
+          <button
+            onClick={() => {
+              setShowResetModal(true);
+              setResetEmail("");
+              setResetSent(false);
+            }}
+          >
+            비밀번호 재설정
+          </button>
           <button onClick={() => navigate("/signup")}>회원가입</button>
         </div>
       </div>
+
+      {/* Password Reset Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">비밀번호 재설정</h3>
+              <button
+                onClick={() => setShowResetModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            {!resetSent ? (
+              <>
+                <p className="text-sm text-gray-500 mb-4">
+                  가입하신 이메일 주소를 입력하면 재설정 링크를 보내드립니다.
+                </p>
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
+                  placeholder="이메일을 입력하세요"
+                />
+                <button
+                  onClick={handleResetRequest}
+                  className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                >
+                  링크 보내기
+                </button>
+              </>
+            ) : (
+              <div className="text-center">
+                <p className="mb-4">{resetEmail}로 링크를 보냈습니다.</p>
+                <button
+                  onClick={() => setShowResetModal(false)}
+                  className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+                >
+                  확인
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
