@@ -29,13 +29,14 @@ const WritePage: React.FC = () => {
           .eq("id", id)
           .single();
 
-        if (error) {
-          alert("게시글 정보를 불러오지 못했습니다.");
+        if (error || !data) {
+          toast.error("게시글 정보를 불러오지 못했습니다.");
+          navigate("/dashboard");
           return;
         }
 
         if (data.user_id !== user.id) {
-          alert("본인이 작성한 게시글만 수정할 수 있습니다.");
+          toast.error("본인이 작성한 게시글만 수정할 수 있습니다.");
           navigate("/dashboard");
           return;
         }
@@ -51,12 +52,12 @@ const WritePage: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!user) {
-      alert("로그인이 필요합니다.");
+      toast.warn("로그인이 필요합니다.");
       return;
     }
 
     if (!title.trim() || !content.trim()) {
-      alert("제목과 내용을 모두 입력해주세요.");
+      toast.warn("제목과 내용을 모두 입력해주세요.");
       return;
     }
 
@@ -65,10 +66,10 @@ const WritePage: React.FC = () => {
         .from("posts")
         .update({ title, content, category })
         .eq("id", id)
-        .eq("user_id", user.id);
+        .eq("user_id", user.id); // ✅ RLS 정책 대응
 
       if (error) {
-        alert("게시글 수정에 실패했습니다.");
+        toast.error("게시글 수정에 실패했습니다.");
         console.error("UPDATE 실패:", error.message);
       } else {
         toast.success("게시글이 수정되었습니다 ✏️");
@@ -86,7 +87,7 @@ const WritePage: React.FC = () => {
         .single();
 
       if (profileError || !profile?.nickname) {
-        alert("닉네임 정보를 불러오지 못했습니다.");
+        toast.error("닉네임 정보를 불러오지 못했습니다.");
         console.error("닉네임 에러:", profileError?.message);
         return;
       }
@@ -99,14 +100,14 @@ const WritePage: React.FC = () => {
             content,
             category,
             author: profile.nickname,
-            user_id: user.id,
+            user_id: user.id, // ✅ RLS 정책 대응
           },
         ])
         .select()
         .single();
 
       if (error) {
-        alert("게시글 등록에 실패했습니다.");
+        toast.error("게시글 등록에 실패했습니다.");
         console.error("INSERT 실패:", error.message);
       } else {
         toast.success("게시글이 등록되었습니다 ✅");

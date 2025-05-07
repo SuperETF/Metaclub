@@ -1,4 +1,4 @@
-// ✅ src/pages/PostDetailPage.tsx (최종 리팩토링 with 조회수 트리거 + 비회원 토스트)
+// ✅ 최종 리팩토링: RLS 대응 + 삭제 제한 + UX 유지
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
@@ -44,38 +44,37 @@ const PostDetailPage: React.FC = () => {
       setCurrentReaction(reaction?.reaction_type ?? null);
     }
   };
-useEffect(() => {
-  if (hasTrackedView.current) return;
-  hasTrackedView.current = true;
 
-  console.log("👀 조회수 트래킹 시작");
+  useEffect(() => {
+    if (hasTrackedView.current) return;
+    hasTrackedView.current = true;
 
-  const trackView = async () => {
-    let anonId: string | null = null;
+    const trackView = async () => {
+      let anonId: string | null = null;
 
-    if (!user && typeof window !== "undefined") {
-      anonId = localStorage.getItem("anon_id");
-      if (!anonId) {
-        anonId = crypto.randomUUID();
-        localStorage.setItem("anon_id", anonId);
+      if (!user && typeof window !== "undefined") {
+        anonId = localStorage.getItem("anon_id");
+        if (!anonId) {
+          anonId = crypto.randomUUID();
+          localStorage.setItem("anon_id", anonId);
+        }
       }
-    }
 
-    const { error } = await supabase.from("post_views").insert({
-      post_id: id,
-      user_id: user?.id ?? null,
-      anonymous_id: anonId,
-    });
+      const { error } = await supabase.from("post_views").insert({
+        post_id: id,
+        user_id: user?.id ?? null,
+        anonymous_id: anonId,
+      });
 
-    if (error && error.code !== "23505" && error.code !== "409") {
-      console.error("❌ 조회수 등록 실패:", error.message);
-    }
+      if (error && error.code !== "23505" && error.code !== "409") {
+        console.error("❌ 조회수 등록 실패:", error.message);
+      }
 
-    await refreshPost();
-  };
+      await refreshPost();
+    };
 
-  trackView();
-}, [id, user]);
+    trackView();
+  }, [id, user]);
 
   const handleReaction = async (type: "like" | "dislike") => {
     if (!user) {
@@ -148,8 +147,19 @@ useEffect(() => {
 
   const confirmDelete = async () => {
     setShowDeleteConfirm(false);
-    await supabase.from("posts").delete().eq("id", id);
-    navigate("/dashboard");
+    const { error } = await supabase
+      .from("posts")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user?.id); // ✅ 본인 글만 삭제 허용
+
+    if (error) {
+      toast.error("게시글 삭제에 실패했습니다.");
+      console.error("삭제 실패:", error.message);
+    } else {
+      toast.success("게시글이 삭제되었습니다 🗑️");
+      navigate("/dashboard");
+    }
   };
 
   if (!post) return <div className="pt-28 text-center">로딩 중...</div>;
@@ -245,30 +255,30 @@ useEffect(() => {
         <h2 className="font-semibold mb-3">댓글 {comments.length}</h2>
 
         {user ? (
-  <div className="flex items-center mb-4">
-    <input
-      type="text"
-      placeholder="댓글을 입력하세요"
-      className="flex-1 border rounded-lg px-3 py-2 text-sm"
-      value={commentText}
-      onChange={(e) => setCommentText(e.target.value)}
-    />
-    <button
-      onClick={handleAddComment}
-      className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-lg text-sm"
-    >
-      등록
-    </button>
-  </div>
-) : (
-  <div className="flex justify-center items-center mb-4 py-4 border rounded bg-gray-50 text-gray-500 text-sm">
-    댓글을 작성하려면
-    <button onClick={() => navigate('/login')} className="text-blue-600 underline ml-1">
-      로그인
-    </button>
-    이 필요합니다.
-  </div>
-)}
+          <div className="flex items-center mb-4">
+            <input
+              type="text"
+              placeholder="댓글을 입력하세요"
+              className="flex-1 border rounded-lg px-3 py-2 text-sm"
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+            />
+            <button
+              onClick={handleAddComment}
+              className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-lg text-sm"
+            >
+              등록
+            </button>
+          </div>
+        ) : (
+          <div className="flex justify-center items-center mb-4 py-4 border rounded bg-gray-50 text-gray-500 text-sm">
+            댓글을 작성하려면
+            <button onClick={() => navigate('/login')} className="text-blue-600 underline ml-1">
+              로그인
+            </button>
+            이 필요합니다.
+          </div>
+        )}
 
         <div className="space-y-4">
           {comments.map((comment, idx) => (
