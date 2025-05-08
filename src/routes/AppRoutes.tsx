@@ -1,4 +1,4 @@
-// ✅ src/routes/AppRoutes.tsx (RequireAuth 적용 완료)
+// ✅ src/routes/AppRoutes.tsx (VerifyEmail 제거 및 리디렉션 정리)
 import React from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import ResponsiveContainer from "../layouts/ResponsiveContainer";
@@ -16,7 +16,6 @@ import MyPostsPage from "../pages/MyPostPage";
 import Header from "../components/Dashboard/Header";
 import EducationWrite from "../pages/EducationWrite";
 import ResetPassword from "../pages/ResetPassword";
-import VerifyEmail from "../pages/VerifyEmail";
 import RequireAuth from "./RequireAuth";
 
 const LayoutWithTabs = () => (
@@ -35,7 +34,6 @@ const AppRoutes: React.FC = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/verify-email" element={<VerifyEmail />} />
 
       {/* ✅ 헤더 포함 라우트 그룹 */}
       <Route element={<LayoutWithTabs />}>
