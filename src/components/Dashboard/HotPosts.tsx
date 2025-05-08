@@ -30,7 +30,7 @@ const HotPosts: React.FC = () => {
   }, []);
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-4 md:p-6 space-y-4">
+    <div className="bg-white md:rounded-xl md:shadow-md p-2 sm:p-3 md:p-6 space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-base md:text-lg font-bold text-gray-900">🔥 인기 게시글</h2>
         <button className="text-sm md:text-base text-blue-600 font-medium hover:underline">
