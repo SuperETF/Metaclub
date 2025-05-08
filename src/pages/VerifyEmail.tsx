@@ -1,4 +1,4 @@
-// ✅ src/pages/VerifyEmail.tsx
+// ✅ VerifyEmail.tsx 전체 수정된 코드
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
@@ -13,14 +13,52 @@ const VerifyEmail = () => {
         ? window.location.href.replace("#", "?")
         : window.location.href;
 
-      const { data, error } = await supabase.auth.exchangeCodeForSession(url);
-      if (error || !data.session) {
+      // 인증 코드로 세션 교환
+      const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(url);
+
+      if (sessionError || !sessionData.session) {
         toast.error("이메일 인증 실패: 링크가 만료되었거나 잘못되었습니다.");
         navigate("/login", { replace: true });
-      } else {
-        toast.success("이메일 인증이 완료되었습니다. 로그인해주세요.");
-        navigate("/login", { replace: true });
+        return;
       }
+
+      // 인증된 유저 정보 가져오기
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !userData.user) {
+        toast.error("유저 정보를 불러올 수 없습니다.");
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      const user = userData.user;
+
+      // 이미 profiles에 존재하는지 확인
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!existingProfile) {
+        const { error: insertError } = await supabase.from("profiles").insert({
+          id: user.id,
+          email: user.email,
+          name: user.user_metadata?.name || "",
+          nickname: user.user_metadata?.nickname || "",
+          phone: user.user_metadata?.phone || "",
+          marketing: user.user_metadata?.marketing || false,
+          agreement: user.user_metadata?.agreement || false,
+        });
+
+        if (insertError) {
+          toast.error("프로필 등록 실패: " + insertError.message);
+          return;
+        }
+      }
+
+      toast.success("이메일 인증이 완료되었습니다. 로그인해주세요.");
+      navigate("/login", { replace: true });
     };
 
     run();
