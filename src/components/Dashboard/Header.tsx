@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useUser } from "@supabase/auth-helpers-react";
+import { useUser, useSessionContext } from "@supabase/auth-helpers-react";
 import { supabase } from "../../lib/supabaseClient";
 import ResponsiveContainer from "../../layouts/ResponsiveContainer";
 
 const Header: React.FC = () => {
   const user = useUser();
+  const { isLoading } = useSessionContext(); // ✅ 추가
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -68,7 +69,7 @@ const Header: React.FC = () => {
               onClick={handleProfileClick}
               className="text-sm text-gray-700 font-medium hover:text-blue-600 transition"
             >
-              {user ? nickname : "로그인"}
+              {!isLoading && user ? nickname : "로그인"} {/* ✅ 핵심 조건 */}
             </button>
           </div>
         </div>
