@@ -1,4 +1,4 @@
-// ✅ src/routes/AppRoutes.tsx (VerifyEmail 제거 및 리디렉션 정리)
+// ✅ src/routes/AppRoutes.tsx (Dashboard를 공개 페이지로 변경)
 import React from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import ResponsiveContainer from "../layouts/ResponsiveContainer";
@@ -30,27 +30,30 @@ const LayoutWithTabs = () => (
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      {/* ✅ 로그인 & 회원가입 & 인증 관련 라우트 */}
+      {/* ✅ 인증 관련 라우트 (Layout 없이) */}
       <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
+      <Route path="/signup/*" element={<Signup />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* ✅ 헤더 포함 라우트 그룹 */}
+      {/* ✅ 공개 라우트 (Layout 포함, 로그인 필요 없음) */}
       <Route element={<LayoutWithTabs />}>
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/mypage" element={<RequireAuth><MyPage /></RequireAuth>} />
-        <Route path="/myposts" element={<RequireAuth><MyPostsPage /></RequireAuth>} />
-        <Route path="/edit-profile" element={<RequireAuth><EditProfile /></RequireAuth>} />
-        <Route path="/write" element={<RequireAuth><WritePage /></RequireAuth>} />
-        <Route path="/write/:id" element={<RequireAuth><WritePage /></RequireAuth>} />
-        <Route path="/education/write" element={<RequireAuth><EducationWrite /></RequireAuth>} />
-
         <Route path="/quiz/:id" element={<QuizStart />} />
         <Route path="/quiz-result/:resultId" element={<QuizResult />} />
         <Route path="/post/:id" element={<PostDetailPage />} />
       </Route>
 
-      {/* ✅ 기본 경로 */}
+      {/* ✅ 보호 라우트 그룹 (Layout + 인증 필요) */}
+      <Route element={<RequireAuth><LayoutWithTabs /></RequireAuth>}>
+        <Route path="/mypage" element={<MyPage />} />
+        <Route path="/myposts" element={<MyPostsPage />} />
+        <Route path="/edit-profile" element={<EditProfile />} />
+        <Route path="/write" element={<WritePage />} />
+        <Route path="/write/:id" element={<WritePage />} />
+        <Route path="/education/write" element={<EducationWrite />} />
+      </Route>
+
+      {/* ✅ 루트 경로 리디렉션 */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );

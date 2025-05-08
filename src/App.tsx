@@ -1,4 +1,4 @@
-// ✅ src/App.tsx (세션 반영 타이밍 보완 + 로그인 후 프로필 자동 등록 추가)
+// ✅ src/App.tsx (최종 수정된 코드 - 인증 페이지 외에서는 리디렉션 안 하도록 개선)
 import React, { useEffect } from "react";
 import { BrowserRouter, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -17,54 +17,54 @@ const AppInner: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ 인증된 사용자가 인증 페이지(/login, /signup)에 접근 시 리디렉션
+  // ✅ 인증 흐름 경로가 아닐 때만 자동 리디렉션
   useEffect(() => {
-    if (isLoading) return;
-
     const params = new URLSearchParams(location.search);
     const type = params.get("type");
-
     const isAuthPage = ["/login", "/signup"].includes(location.pathname);
     const isCallbackFlow = ["signup", "recovery"].includes(type ?? "");
 
     if (user && isAuthPage && !isCallbackFlow) {
       navigate("/dashboard", { replace: true });
     }
-  }, [user, isLoading, location, navigate]);
+  }, [user, location, navigate]);
 
-  // ✅ 로그인 후 profiles 자동 등록
+  // ✅ 최초 로그인 시 1회 프로필 자동 저장
   useEffect(() => {
-    if (!user || !user.email) return;
+    const syncProfileIfNeeded = async () => {
+      if (!user || !user.email) return;
 
-    const syncProfile = async () => {
       const { data: existing } = await supabase
         .from("profiles")
         .select("id")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (!existing) {
-        const { name, nickname, phone, marketing, agreement } = user.user_metadata || {};
+      if (existing) return;
 
-        const { error } = await supabase.from("profiles").insert({
+      const { nickname, name, phone, marketing, agreement } = user.user_metadata || {};
+
+      const { error } = await supabase.from("profiles").insert([
+        {
           id: user.id,
           email: user.email,
           name: name || "",
           nickname: nickname || "",
           phone: phone || "",
+          bio: "",
           marketing: marketing ?? false,
           agreement: agreement ?? false,
-        });
+        },
+      ]);
 
-        if (error) {
-          console.error("[App.tsx] profiles 자동 등록 실패:", error.message);
-        } else {
-          console.log("✅ profiles 자동 등록 완료");
-        }
+      if (error) {
+        console.error("❌ profiles insert 실패:", error.message);
+      } else {
+        console.log("✅ profiles 자동 저장 완료");
       }
     };
 
-    syncProfile();
+    syncProfileIfNeeded();
   }, [user]);
 
   if (isLoading) {
