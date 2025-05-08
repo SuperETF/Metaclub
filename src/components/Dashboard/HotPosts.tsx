@@ -1,4 +1,4 @@
-// ✅ src/components/Dashboard/HotPosts.tsx (모든 디바이스에서 라운드 유지)
+// ✅ src/components/Dashboard/HotPosts.tsx
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
@@ -17,7 +17,7 @@ const HotPosts: React.FC = () => {
         .from("posts")
         .select("id, title, views")
         .order("views", { ascending: false })
-        .limit(5);
+        .limit(10);
 
       if (!error && data) {
         setPosts(data);
@@ -29,30 +29,50 @@ const HotPosts: React.FC = () => {
     fetchHotPosts();
   }, []);
 
+  const slides = [
+    posts.slice(0, 5),   // 1~5위
+    posts.slice(5, 10),  // 6~10위
+  ];
+
   return (
-    <div className="w-full bg-white rounded-xl shadow-md p-2 sm:p-3 md:p-6 space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-base md:text-lg font-bold text-gray-900">🔥 인기 게시글</h2>
-        <button className="text-sm md:text-base text-blue-600 font-medium hover:underline">
-          더보기
-        </button>
+    <div className="w-full bg-white rounded-xl shadow-md p-4 sm:p-5 md:p-6 space-y-4">
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="text-base font-semibold text-gray-900">🔥 인기 게시글 TOP 10</h2>
       </div>
-      <div className="space-y-3">
-        {posts.map((post) => (
+
+      <div className="overflow-x-auto flex gap-4 scroll-smooth snap-x snap-mandatory">
+        {slides.map((slide, slideIndex) => (
           <div
-            key={post.id}
-            className="flex justify-between items-center border-b last:border-none pb-2"
+            key={slideIndex}
+            className="min-w-full shrink-0 space-y-2 snap-start"
           >
-            <p
-              className="w-10/12 truncate text-sm md:text-base font-medium text-gray-800"
-              title={post.title}
-            >
-              {post.title}
-            </p>
-            <div className="flex items-center text-gray-400 text-xs md:text-sm">
-              <i className="far fa-eye mr-1" />
-              <span>{post.views.toLocaleString()}</span>
-            </div>
+            {slide.map((post, index) => {
+              const rank = slideIndex * 5 + index + 1;
+              const rankColor = rank <= 3 ? "text-red-500" : "text-green-600";
+
+              return (
+                <div
+                  key={post.id}
+                  className="flex justify-between items-center border-b last:border-none py-2"
+                >
+                  <div className="flex items-center gap-2 w-10/12">
+                    <span className={`text-sm font-bold ${rankColor}`}>
+                      {rank}위
+                    </span>
+                    <p
+                      className="truncate text-[15px] font-medium text-gray-800"
+                      title={post.title}
+                    >
+                      {post.title}
+                    </p>
+                  </div>
+                  <div className="flex items-center text-gray-400 text-sm">
+                    <i className="far fa-eye mr-1" />
+                    <span>{post.views.toLocaleString()}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>

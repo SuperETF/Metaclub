@@ -1,3 +1,4 @@
+// ✅ src/components/Header.tsx
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useUser, useSessionContext } from "@supabase/auth-helpers-react";
@@ -6,7 +7,7 @@ import ResponsiveContainer from "../../layouts/ResponsiveContainer";
 
 const Header: React.FC = () => {
   const user = useUser();
-  const { isLoading } = useSessionContext(); // ✅ 추가
+  const { isLoading } = useSessionContext();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -29,7 +30,20 @@ const Header: React.FC = () => {
   }, [user]);
 
   const handleBack = () => {
-    navigate(-1);
+    if (
+      location.pathname.startsWith("/post/") &&
+      location.state?.from === "dashboard"
+    ) {
+      navigate("/dashboard", {
+        state: {
+          scrollY: location.state.scrollY,
+          category: location.state.category,
+          from: "post",
+        },
+      });
+    } else {
+      navigate(-1);
+    }
   };
 
   const handleProfileClick = () => {
@@ -69,7 +83,7 @@ const Header: React.FC = () => {
               onClick={handleProfileClick}
               className="text-sm text-gray-700 font-medium hover:text-blue-600 transition"
             >
-              {!isLoading && user ? nickname : "로그인"} {/* ✅ 핵심 조건 */}
+              {!isLoading && user ? nickname : "로그인"}
             </button>
           </div>
         </div>

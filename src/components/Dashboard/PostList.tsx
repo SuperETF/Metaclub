@@ -49,19 +49,20 @@ const PostList: React.FC<Props> = ({ category }) => {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="bg-gray-50 space-y-2">
       {posts.map((post) => (
         <div
           key={post.id}
-          className="bg-white p-4 rounded-xl shadow-sm cursor-pointer"
+          className="bg-white w-full px-4 py-3 cursor-pointer"
           onClick={() => navigate(`/post/${post.id}`)}
         >
           <div className="text-sm text-gray-400 mb-1">
             {post.author} · {formatTimeAgo(post.created_at)}
           </div>
-          <h3 className="font-semibold text-base mb-1">{post.title}</h3>
+          <h3 className="font-semibold text-base text-gray-900 mb-1">
+            {post.title}
+          </h3>
           <p className="text-sm text-gray-700 line-clamp-2">{post.content}</p>
-
           <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
             <div className="flex items-center gap-3">
               <span>👍 {post.likes}</span>

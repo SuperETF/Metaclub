@@ -1,8 +1,9 @@
+// src/components/common/ResponsiveContainer.tsx
 import React from "react";
 
 const ResponsiveContainer = ({ children }) => {
   return (
-    <div className="relative w-full max-w-screen-md mx-auto px-4">
+    <div className="w-full sm:max-w-screen-md sm:mx-auto sm:px-4 px-0">
       {children}
     </div>
   );

@@ -1,9 +1,9 @@
-// ✅ 최종 리팩토링: 댓글 저장, 조회, 수정/삭제, 반응형 및 권한 대응 포함
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
 import { toast } from "react-toastify";
+import LoanBanner from "../components/Dashboard/LoanBanner";
 import "react-toastify/dist/ReactToastify.css";
 
 const categoryMap: Record<string, string> = {
@@ -23,8 +23,6 @@ const PostDetailPage: React.FC = () => {
   const [commentText, setCommentText] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
-  const [showMenu, setShowMenu] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [currentReaction, setCurrentReaction] = useState<"like" | "dislike" | null>(null);
 
   const formatDate = (dateStr: string) => {
@@ -54,65 +52,56 @@ const PostDetailPage: React.FC = () => {
       .eq("post_id", id)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("❌ 댓글 불러오기 실패:", error.message);
-    } else {
-      setComments(data || []);
-    }
+    if (!error) setComments(data || []);
   };
 
   useEffect(() => {
     if (hasTrackedView.current) return;
     hasTrackedView.current = true;
-
+  
     const trackView = async () => {
-      let anonId: string | null = null;
-
+      let anonId = user?.id ?? null;
+  
       if (!user && typeof window !== "undefined") {
-        anonId = localStorage.getItem("anon_id");
-        if (!anonId) {
-          anonId = crypto.randomUUID();
-          localStorage.setItem("anon_id", anonId);
+        anonId = localStorage.getItem("anon_id") || crypto.randomUUID();
+        localStorage.setItem("anon_id", anonId);
+      }
+  
+      try {
+        const { error } = await supabase.from("post_views").insert({
+          post_id: id,
+          user_id: user?.id ?? null,
+          anonymous_id: anonId,
+        });
+  
+        if (error && error.code !== "23505" && error.code !== "409") {
+          console.error("조회수 등록 실패:", error.message);
         }
+      } catch (err: any) {
+        console.error("조회수 등록 실패:", err?.message || err);
       }
-
-      const { error } = await supabase.from("post_views").insert({
-        post_id: id,
-        user_id: user?.id ?? null,
-        anonymous_id: anonId,
-      });
-
-      if (error && error.code !== "23505" && error.code !== "409") {
-        console.error("❌ 조회수 등록 실패:", error.message);
-      }
-
+  
       await refreshPost();
       await loadComments();
     };
-
+  
     trackView();
   }, [id, user]);
+  
 
   const handleReaction = async (type: "like" | "dislike") => {
-    if (!user) {
-      toast.warn("로그인이 필요한 기능입니다.");
-      return;
-    }
-
+    if (!user) return toast.warn("로그인이 필요합니다.");
     if (!post) return;
 
     if (currentReaction === type) {
       await supabase.from("post_reactions").delete().eq("post_id", id).eq("user_id", user.id);
       setCurrentReaction(null);
     } else {
-      if (currentReaction === null) {
-        await supabase.from("post_reactions").insert({ post_id: id, user_id: user.id, reaction_type: type });
+      const payload = { post_id: id, user_id: user.id, reaction_type: type };
+      if (!currentReaction) {
+        await supabase.from("post_reactions").insert(payload);
       } else {
-        await supabase
-          .from("post_reactions")
-          .update({ reaction_type: type })
-          .eq("post_id", id)
-          .eq("user_id", user.id);
+        await supabase.from("post_reactions").update(payload).eq("post_id", id).eq("user_id", user.id);
       }
       setCurrentReaction(type);
     }
@@ -121,68 +110,38 @@ const PostDetailPage: React.FC = () => {
   };
 
   const handleAddComment = async () => {
-    if (!user) {
-      toast.warn("로그인이 필요한 기능입니다.");
-      return;
-    }
-
+    if (!user) return toast.warn("로그인이 필요합니다.");
     if (!commentText.trim()) return;
 
-    try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("nickname")
-        .eq("id", user.id)
-        .single();
+    const { data: profile } = await supabase.from("profiles").select("nickname").eq("id", user.id).single();
+    await supabase.from("comments").insert([{
+      post_id: id,
+      user_id: user.id,
+      nickname: profile?.nickname || "익명",
+      content: commentText,
+    }]);
 
-      const { error } = await supabase.from("comments").insert([
-        {
-          post_id: id,
-          user_id: user.id,
-          nickname: profile?.nickname || "익명",
-          content: commentText,
-        },
-      ]);
-
-      if (!error) {
-        setCommentText("");
-        await loadComments();
-      }
-    } catch (err) {
-      console.error("댓글 등록 중 오류:", err);
-    }
+    setCommentText("");
+    await loadComments();
   };
 
   const handleEditComment = async (commentId: string) => {
-    const { error } = await supabase
+    await supabase
       .from("comments")
       .update({ content: editText })
       .eq("id", commentId)
       .eq("user_id", user?.id);
 
-    if (!error) {
-      toast.success("댓글이 수정되었습니다.");
-      setEditingCommentId(null);
-      setEditText("");
-      await loadComments();
-    } else {
-      toast.error("수정 실패");
-    }
+    toast.success("댓글이 수정되었습니다.");
+    setEditingCommentId(null);
+    setEditText("");
+    await loadComments();
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    const { error } = await supabase
-      .from("comments")
-      .delete()
-      .eq("id", commentId)
-      .eq("user_id", user?.id);
-
-    if (!error) {
-      toast.success("댓글이 삭제되었습니다.");
-      await loadComments();
-    } else {
-      toast.error("삭제 실패");
-    }
+    await supabase.from("comments").delete().eq("id", commentId).eq("user_id", user?.id);
+    toast.success("댓글이 삭제되었습니다.");
+    await loadComments();
   };
 
   return (
@@ -190,9 +149,9 @@ const PostDetailPage: React.FC = () => {
       {post && (
         <div className="mb-6 bg-white p-5 rounded-xl shadow">
           <div className="text-sm text-blue-600 font-medium mb-1">
-  {categoryMap[post.category] || post.category}
-</div>
-<h1 className="text-2xl font-bold mb-2">{post.title}</h1>
+            {categoryMap[post.category] || post.category}
+          </div>
+          <h1 className="text-2xl font-bold mb-2">{post.title}</h1>
           <div className="text-sm text-gray-500 mb-3">
             {post.author} · {formatDate(post.created_at)}
           </div>
@@ -200,24 +159,25 @@ const PostDetailPage: React.FC = () => {
           <div className="flex justify-start gap-4 mt-4 pt-3 border-t border-gray-100 text-sm text-gray-500">
             <button
               onClick={() => handleReaction("like")}
-              className={`flex items-center gap-1 px-3 py-1 rounded text-sm font-medium transition ${currentReaction === "like" ? "bg-red-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+              className={`flex items-center gap-1 px-3 py-1 rounded font-medium transition ${currentReaction === "like" ? "bg-red-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
             >
               <i className="fas fa-thumbs-up"></i> {Math.max(post.likes ?? 0, 0)}
             </button>
             <button
               onClick={() => handleReaction("dislike")}
-              className={`flex items-center gap-1 px-3 py-1 rounded text-sm font-medium transition ${currentReaction === "dislike" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+              className={`flex items-center gap-1 px-3 py-1 rounded font-medium transition ${currentReaction === "dislike" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
             >
               <i className="fas fa-thumbs-down"></i> {Math.max(post.dislikes ?? 0, 0)}
             </button>
-            <span className="flex items-center gap-1 text-sm text-gray-500">
+            <span className="flex items-center gap-1 text-gray-500">
               <i className="fas fa-eye"></i> {post.views}
             </span>
           </div>
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow p-5">
+      {/* 댓글 영역 */}
+      <div className="bg-white rounded-xl shadow p-5 mb-8">
         <h2 className="font-semibold mb-3">댓글 {comments.length}</h2>
         {user ? (
           <div className="flex items-center mb-4">
@@ -282,6 +242,9 @@ const PostDetailPage: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* 🔽 하단 배너 */}
+      <LoanBanner />
     </div>
   );
 };

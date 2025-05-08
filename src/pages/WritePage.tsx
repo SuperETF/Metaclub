@@ -66,7 +66,7 @@ const WritePage: React.FC = () => {
         .from("posts")
         .update({ title, content, category })
         .eq("id", id)
-        .eq("user_id", user.id); // ✅ RLS 정책 대응
+        .eq("user_id", user.id);
 
       if (error) {
         toast.error("게시글 수정에 실패했습니다.");
@@ -76,7 +76,10 @@ const WritePage: React.FC = () => {
         if (from === "myposts") {
           navigate("/myposts");
         } else {
-          navigate("/dashboard", { replace: false, state: { scrollY, category: categoryState } });
+          navigate("/dashboard", {
+            replace: false,
+            state: { scrollY, category: categoryState },
+          });
         }
       }
     } else {
@@ -100,7 +103,7 @@ const WritePage: React.FC = () => {
             content,
             category,
             author: profile.nickname,
-            user_id: user.id, // ✅ RLS 정책 대응
+            user_id: user.id,
           },
         ])
         .select()
@@ -111,7 +114,16 @@ const WritePage: React.FC = () => {
         console.error("INSERT 실패:", error.message);
       } else {
         toast.success("게시글이 등록되었습니다 ✅");
-        navigate(`/post/${data.id}`);
+
+        // ✅ replace: true 적용!
+        navigate(`/post/${data.id}`, {
+          replace: true,
+          state: {
+            from: "dashboard",
+            scrollY: 0,
+            category: category,
+          },
+        });
       }
     }
   };

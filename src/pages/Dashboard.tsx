@@ -1,4 +1,4 @@
-// ✅ src/pages/Dashboard.tsx (전체 화면 확장형 레이아웃으로 리디자인 완료)
+// ✅ src/pages/Dashboard.tsx (PostList만 full-width로 분리 완료)
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
@@ -41,28 +41,32 @@ const Dashboard: React.FC = () => {
   return (
     <div className="relative min-h-screen bg-[#f9fafb]">
       <main className="pt-28 pb-20">
+        {/* 중앙 정렬 컨텐츠 */}
         <div className="w-full px-2 sm:px-4 md:px-8 space-y-8">
           <SubjectButtons />
           <QuizStatusCard />
           <LoanBanner />
           <HotPosts />
-  
-          <section className="w-full px-2 sm:px-4 md:px-8 space-y-4">
-  <div className="flex justify-between items-center">
-    <h2 className="text-base md:text-lg font-bold text-gray-900">📚 교육 및 강의 정보</h2>
-  </div>
-  <EducationTabs selected={eduCategory} onChange={setEduCategory} />
-  <EducationBoard category={eduCategory} />
-</section>
 
-  
-          <section className="px-1">
+          <section className="w-full space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-base md:text-lg font-bold text-gray-900">📚 교육 및 강의 정보</h2>
+            </div>
+            <EducationTabs selected={eduCategory} onChange={setEduCategory} />
+            <EducationBoard category={eduCategory} />
+          </section>
+        </div>
+
+        {/* ✅ PostList만 전체 화면 확장 (좌우 여백 제거) */}
+        <div className="w-full bg-gray-50">
+          <section className="space-y-4">
             <CategoryTabs selected={selectedCategory} onChange={setSelectedCategory} />
             <PostList category={selectedCategory} />
           </section>
         </div>
       </main>
-  
+
+      {/* 플로팅 작성 버튼 */}
       <div className="fixed bottom-6 left-0 right-0 z-50 px-4">
         <div className="w-full px-4 md:px-8 flex justify-end">
           <FloatingWriteButton scrollY={scrollY} selectedCategory={selectedCategory} />
@@ -70,7 +74,6 @@ const Dashboard: React.FC = () => {
       </div>
     </div>
   );
-  
 };
 
 export default Dashboard;
