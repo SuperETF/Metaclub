@@ -1,3 +1,4 @@
+// ✅ src/components/Dashboard/HotPosts.tsx (모바일-웹 반응형 최종 개선)
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
@@ -15,7 +16,7 @@ const HotPosts: React.FC = () => {
       const { data, error } = await supabase
         .from("posts")
         .select("id, title, views")
-        .order("views", { ascending: false }) // ✅ 조회수 기준 정렬
+        .order("views", { ascending: false })
         .limit(5);
 
       if (!error && data) {
@@ -29,23 +30,23 @@ const HotPosts: React.FC = () => {
   }, []);
 
   return (
-    <div className="bg-white rounded-xl p-4 mb-5 shadow-sm">
-      <div className="flex justify-between items-center mb-3">
-        <h2 className="font-bold text-lg">인기 게시글</h2>
-        <button className="text-sm text-gray-500 flex items-center">
-          더보기 <i className="fas fa-chevron-right ml-1 text-xs"></i>
+    <div className="bg-white rounded-xl shadow-md p-4 md:p-6 space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-base md:text-lg font-bold text-gray-900">🔥 인기 게시글</h2>
+        <button className="text-sm md:text-base text-blue-600 font-medium hover:underline">
+          더보기
         </button>
       </div>
-      <div className="space-y-4">
-        {posts.map((post, idx) => (
+      <div className="space-y-3">
+        {posts.map((post) => (
           <div
             key={post.id}
-            className={`flex justify-between items-start pb-3 ${
-              idx < posts.length - 1 ? "border-b" : ""
-            }`}
+            className="flex justify-between items-center border-b last:border-none pb-2"
           >
-            <p className="font-medium text-sm">{post.title}</p>
-            <div className="flex items-center text-gray-500 text-xs">
+            <p className="text-sm md:text-base text-gray-800 font-medium truncate w-10/12">
+              {post.title}
+            </p>
+            <div className="flex items-center text-gray-400 text-xs md:text-sm">
               <i className="far fa-eye mr-1"></i>
               <span>{post.views.toLocaleString()}</span>
             </div>
