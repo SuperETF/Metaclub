@@ -8,22 +8,22 @@ interface BannerItem {
 
 const banners: BannerItem[] = [
   {
-    title: "파브스포츠는 최강이다.",
-    description: "자랑스러운 우리는 파브스포츠",
+    title: "메타인지클럽에 오신 것을 환영합니다🎉",
+    description: "10% 더 높은 경쟁력을 갖추기 위한 자료 공유 커뮤니티입니다.",
     imageUrl:
-      "data:image/jpeg;base64,...", // 이미지 Base64 생략
+      "/Public/images/배너1.png", // 이미지 Base64 생략
   },
   {
-    title: "운동은 했니?",
-    description: "기초해부학 풀고 나서 해도 늦지 않아",
+    title: "💬 당신의 한 줄이 누군가에겐 큰 인사이트가 됩니다.",
+    description: "평범해 보일지 몰라도, 누군가에게는 큰 배움의 기회가 될 수 있어요😌",
     imageUrl:
-      "data:image/jpeg;base64,...", // 이미지 Base64 생략
+      "/Public/images/배너2.png", // 이미지 Base64 생략
   },
   {
-    title: "뉴로 부스트",
-    description: "지금 바로 신경해부학 도전해보세요!",
+    title: "지금 바로 기초해부학에 도전해보세요👍",
+    description: "당신의 기초 지식 능력은 몇점일까요!",
     imageUrl:
-      "data:image/jpeg;base64,...", // 이미지 Base64 생략
+      "/Public/images/배너3.png", // 이미지 Base64 생략
   },
 ];
 
