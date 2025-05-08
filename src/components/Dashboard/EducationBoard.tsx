@@ -14,9 +14,9 @@ interface Props {
   category: string;
 }
 
-const CARD_HEIGHT = 110;   // 카드 높이(px)
-const GAP = 12;            // 간격(px)
-const VISIBLE = 4;         // 한 번에 보일 카드 수
+const CARD_HEIGHT = 110;
+const GAP = 12;
+const VISIBLE = 4;
 const MAX_HEIGHT = CARD_HEIGHT * VISIBLE + GAP * (VISIBLE - 1); // 516px
 
 const EducationBoard: React.FC<Props> = ({ category }) => {
@@ -36,7 +36,7 @@ const EducationBoard: React.FC<Props> = ({ category }) => {
 
   return (
     <div
-      className="overflow-y-auto scrollbar-hide px-4"
+      className="overflow-y-auto scrollbar-hide w-full"
       style={{
         maxHeight: `${MAX_HEIGHT}px`,
         paddingRight: "2px",
@@ -53,10 +53,10 @@ const EducationBoard: React.FC<Props> = ({ category }) => {
           <a
             key={item.id}
             href={`/education/${item.category}/${item.id}`}
-            className="flex items-start gap-4 p-4 bg-white rounded-xl shadow-md hover:shadow-lg transition duration-200"
+            className="w-full flex items-start gap-4 p-4 bg-white rounded-xl shadow-md hover:shadow-lg transition duration-200"
             style={{ height: `${CARD_HEIGHT}px` }}
           >
-            {/* 왼쪽에 고화질 이미지(80×80px) */}
+            {/* 왼쪽 이미지 */}
             <div className="w-20 h-20 min-w-[80px] rounded bg-gray-100 overflow-hidden flex-shrink-0">
               <img
                 src={item.image_url}
@@ -70,7 +70,7 @@ const EducationBoard: React.FC<Props> = ({ category }) => {
               <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-1">
                 {item.title}
               </h3>
-              <p className="text-xs text-gray-600 mt-1 line-clamp-1">
+              <p className="text-xs text-gray-600 mt-1 line-clamp-2">
                 {item.description || "소개 문구 없음"}
               </p>
             </div>

@@ -1,4 +1,4 @@
-// ✅ src/components/Dashboard/HotPosts.tsx (모바일-웹 반응형 최종 개선)
+// ✅ src/components/Dashboard/HotPosts.tsx (모든 디바이스에서 라운드 유지)
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
@@ -30,7 +30,7 @@ const HotPosts: React.FC = () => {
   }, []);
 
   return (
-    <div className="bg-white md:rounded-xl md:shadow-md p-2 sm:p-3 md:p-6 space-y-4">
+    <div className="w-full bg-white rounded-xl shadow-md p-2 sm:p-3 md:p-6 space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-base md:text-lg font-bold text-gray-900">🔥 인기 게시글</h2>
         <button className="text-sm md:text-base text-blue-600 font-medium hover:underline">
@@ -43,11 +43,14 @@ const HotPosts: React.FC = () => {
             key={post.id}
             className="flex justify-between items-center border-b last:border-none pb-2"
           >
-            <p className="text-sm md:text-base text-gray-800 font-medium truncate w-10/12">
+            <p
+              className="w-10/12 truncate text-sm md:text-base font-medium text-gray-800"
+              title={post.title}
+            >
               {post.title}
             </p>
             <div className="flex items-center text-gray-400 text-xs md:text-sm">
-              <i className="far fa-eye mr-1"></i>
+              <i className="far fa-eye mr-1" />
               <span>{post.views.toLocaleString()}</span>
             </div>
           </div>

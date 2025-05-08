@@ -2,11 +2,10 @@ import React from "react";
 
 const ResponsiveContainer = ({ children }) => {
   return (
-    <div className="w-full px-4 sm:px-6 md:px-0 md:max-w-screen-md mx-auto">
+    <div className="relative w-full max-w-screen-md mx-auto px-4">
       {children}
     </div>
   );
 };
-
 
 export default ResponsiveContainer;

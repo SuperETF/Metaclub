@@ -61,10 +61,10 @@ const EducationTabs: React.FC<Props> = ({ selected, onChange }) => {
   }, []);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-5 gap-3 px-4">
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-5 gap-3">
       <div
         ref={scrollRef}
-        className="flex gap-2 overflow-x-auto scrollbar-hide touch-pan-x -mx-2 px-2 pb-1 select-none"
+        className="w-full flex gap-2 overflow-x-auto scrollbar-hide touch-pan-x -mx-2 px-2 pb-1 select-none"
       >
         {categories.map((cat) => (
           <button
