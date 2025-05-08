@@ -76,7 +76,7 @@ const LoanBanner: React.FC = () => {
           alt="배너 이미지"
           className="w-20 h-20 object-contain flex-shrink-0"
           onError={(e) => {
-            e.currentTarget.src = "/images/fallback.png";
+            e.currentTarget.style.display = "none";
           }}
         />
       </a>
