@@ -1,7 +1,7 @@
 // ✅ src/App.tsx
 
 import React, { useEffect } from "react";
-import { BrowserRouter, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // ✅ BrowserRouter 제거
 import {
   SessionContextProvider,
   useUser,
@@ -89,12 +89,11 @@ const AppInner: React.FC = () => {
   );
 };
 
+// ✅ BrowserRouter 제거
 const App: React.FC = () => {
   return (
     <SessionContextProvider supabaseClient={supabase}>
-      <BrowserRouter>
-        <AppInner />
-      </BrowserRouter>
+      <AppInner />
     </SessionContextProvider>
   );
 };
