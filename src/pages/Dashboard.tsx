@@ -1,3 +1,4 @@
+// ✅ src/pages/Dashboard.tsx (전체 화면 확장형 레이아웃으로 리디자인 완료)
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
@@ -17,14 +18,12 @@ const Dashboard: React.FC = () => {
   const [eduCategory, setEduCategory] = useState("all");
   const [scrollY, setScrollY] = useState(window.scrollY);
 
-  // ✅ 실시간 scrollY 추적
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // ✅ location.state에서 category & scrollY 안전하게 처리
   useEffect(() => {
     const state = location.state as { category?: string; scrollY?: number } | null;
 
@@ -40,27 +39,29 @@ const Dashboard: React.FC = () => {
   }, [location.state]);
 
   return (
-    <div className="relative min-h-screen bg-gray-50">
-      <main className="pt-28 pb-20 px-4 max-w-screen-md mx-auto space-y-5">
+    <div className="relative min-h-screen bg-[#f9fafb]">
+      <main className="pt-28 pb-20 px-4 md:px-8 max-w-screen-lg mx-auto space-y-8">
         <SubjectButtons />
         <QuizStatusCard />
         <LoanBanner />
         <HotPosts />
 
-        <div className="bg-white rounded-2xl shadow px-4 py-6">
-          <h2 className="font-bold text-lg mb-3">교육 및 강의 정보</h2>
+        <section className="px-1">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-base md:text-lg font-bold text-gray-900">📚 교육 및 강의 정보</h2>
+          </div>
           <EducationTabs selected={eduCategory} onChange={setEduCategory} />
           <EducationBoard category={eduCategory} />
-        </div>
+        </section>
 
-        <div className="bg-white rounded-2xl shadow px-4 py-6">
+        <section className="px-1">
           <CategoryTabs selected={selectedCategory} onChange={setSelectedCategory} />
           <PostList category={selectedCategory} />
-        </div>
+        </section>
       </main>
 
       <div className="fixed bottom-6 left-0 right-0 z-50 px-4">
-        <div className="max-w-screen-md mx-auto flex justify-end">
+        <div className="max-w-screen-lg mx-auto flex justify-end">
           <FloatingWriteButton scrollY={scrollY} selectedCategory={selectedCategory} />
         </div>
       </div>
