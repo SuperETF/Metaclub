@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 
+
 interface BannerItem {
   title: string;
   description: string;
