@@ -1,4 +1,4 @@
-// ✅ src/App.tsx (프로필 insert 제거 및 인증 페이지 보호 최종 반영)
+// ✅ src/App.tsx (세션 반영 타이밍 보완 및 인증 페이지 진입 조건 개선)
 import React, { useEffect } from "react";
 import { BrowserRouter, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -19,6 +19,8 @@ const AppInner: React.FC = () => {
 
   // ✅ 인증된 사용자가 인증 페이지(/login, /signup)에 접근 시 리디렉션
   useEffect(() => {
+    if (isLoading) return; // 세션 로딩 중에는 아무 것도 하지 않음
+
     const params = new URLSearchParams(location.search);
     const type = params.get("type");
 
@@ -28,7 +30,7 @@ const AppInner: React.FC = () => {
     if (user && isAuthPage && !isCallbackFlow) {
       navigate("/dashboard", { replace: true });
     }
-  }, [user, location, navigate]);
+  }, [user, isLoading, location, navigate]);
 
   if (isLoading) {
     return <div className="pt-28 text-center">로딩 중...</div>;
