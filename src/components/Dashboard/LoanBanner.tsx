@@ -18,15 +18,15 @@ const banners: BannerItem[] = [
     bgColorClass: "from-indigo-50 to-indigo-100",
   },
   {
-    title: "누군가에겐 큰 인사이트가 됩니다.🍀",
-    description: "평범해 보여도,\n누군가에겐 큰 배움의 기회가 될 수 있어요 😌",
+    title: "누군가에겐 큰 인사이트가 됩니다🍀",
+    description: "평범해 보여도 누군가에겐\n큰 배움의 기회가 될 수 있어요 😌",
     imageUrl: "/images/B2.png",
     linkUrl: "https://metaclass.club/dashboard",
     bgColorClass: "from-indigo-50 to-indigo-100",
   },
   {
     title: "지금 기초해부학에 도전해보세요 👍",
-    description: "당신의 기초 지식 능력은\n몇 점일까요?",
+    description: "당신의 기초 지식 능력은 몇 점일까요?",
     imageUrl: "/images/B3.png",
     linkUrl: "https://metaclass.club/dashboard",
     bgColorClass: "from-indigo-50 to-indigo-100",
