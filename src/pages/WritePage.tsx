@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "../../src/lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
 import { toast } from "react-toastify";
+import RichEditorApp from "../components/editor/RichEditorApp";
 import "react-toastify/dist/ReactToastify.css";
 
 const WritePage: React.FC = () => {
@@ -114,8 +115,6 @@ const WritePage: React.FC = () => {
         console.error("INSERT 실패:", error.message);
       } else {
         toast.success("게시글이 등록되었습니다 ✅");
-
-        // ✅ replace: true 적용!
         navigate(`/post/${data.id}`, {
           replace: true,
           state: {
@@ -152,13 +151,7 @@ const WritePage: React.FC = () => {
         className="border rounded px-3 py-2 mb-4 w-full"
       />
 
-      <textarea
-        placeholder="내용을 입력하세요"
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        rows={8}
-        className="border rounded px-3 py-2 mb-4 w-full"
-      />
+      <RichEditorApp content={content} onChange={setContent} />
 
       <button
         onClick={handleSubmit}

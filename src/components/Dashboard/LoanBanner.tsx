@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 
-
 interface BannerItem {
   title: string;
   description: string;
@@ -43,8 +42,8 @@ const LoanBanner: React.FC = () => {
       setTimeout(() => {
         setIndex((prev) => (prev + 1) % banners.length);
         setFade(true);
-      }, 300); // fade-out 시간
-    }, 4000); // 배너 전환 간격
+      }, 300);
+    }, 4000);
 
     return () => clearInterval(timer);
   }, []);
@@ -53,7 +52,6 @@ const LoanBanner: React.FC = () => {
 
   return (
     <div className="overflow-hidden">
-      {/* 🔄 배너 콘텐츠 */}
       <a
         href={current.linkUrl}
         target="_blank"
@@ -64,7 +62,6 @@ const LoanBanner: React.FC = () => {
           ${fade ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"}
         `}
       >
-        {/* 텍스트 */}
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-blue-800 text-base sm:text-lg leading-snug">
             {current.title}
@@ -74,15 +71,16 @@ const LoanBanner: React.FC = () => {
           </p>
         </div>
 
-        {/* 이미지 */}
         <img
           src={current.imageUrl}
           alt="배너 이미지"
           className="w-20 h-20 object-contain flex-shrink-0"
+          onError={(e) => {
+            e.currentTarget.src = "/images/fallback.png";
+          }}
         />
       </a>
 
-      {/* 📣 광고 CTA */}
       <a
         href="https://tally.so/r/mJg0B7"
         target="_blank"

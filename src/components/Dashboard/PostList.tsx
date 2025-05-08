@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faThumbsUp, faThumbsDown, faEye } from "@fortawesome/free-solid-svg-icons";
 
 interface Post {
   id: string;
@@ -62,12 +64,21 @@ const PostList: React.FC<Props> = ({ category }) => {
           <h3 className="font-semibold text-base text-gray-900 mb-1">
             {post.title}
           </h3>
-          <p className="text-sm text-gray-700 line-clamp-2">{post.content}</p>
+          <div
+            className="text-sm text-gray-700 line-clamp-2 text-left"
+            children={post.content.replace(/<[^>]+>/g, '')}
+          />
           <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
             <div className="flex items-center gap-3">
-              <span>👍 {post.likes}</span>
-              <span>👎 {post.dislikes}</span>
-              <span>👁 {post.views}</span>
+              <span className="flex items-center gap-1">
+                <FontAwesomeIcon icon={faThumbsUp} /> {post.likes}
+              </span>
+              <span className="flex items-center gap-1">
+                <FontAwesomeIcon icon={faThumbsDown} /> {post.dislikes}
+              </span>
+              <span className="flex items-center gap-1">
+                <FontAwesomeIcon icon={faEye} /> {post.views}
+              </span>
             </div>
           </div>
         </div>
