@@ -103,7 +103,7 @@
        email,
        password,
        options: {
-         emailRedirectTo: `${window.location.origin}/verify-email`, // 🔥 이게 맞아
+         emailRedirectTo: `${window.location.origin}/login?verified=true`, // 🔥 이게 맞아
          data: { nickname, name, phone, marketing, agreement },
        },
      });

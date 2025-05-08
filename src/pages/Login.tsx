@@ -1,5 +1,5 @@
-// ✅ src/pages/Login.tsx (from 상태 기반 리디렉션 포함 최종 리팩토링)
-import React, { useState } from "react";
+// ✅ src/pages/Login.tsx (이메일 인증 성공 시 toast 처리 추가)
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { toast } from "react-toastify";
@@ -17,6 +17,16 @@ const Login: React.FC = () => {
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetSent, setResetSent] = useState(false);
+
+  // ✅ 인증 후 리디렉션되었을 때 toast 메시지 표시
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("verified") === "true") {
+      toast.success("✅ 이메일 인증이 완료되었습니다.");
+      params.delete("verified");
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
