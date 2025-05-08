@@ -1,4 +1,4 @@
-// ✅ VerifyEmail.tsx 전체 최종 코드 (에러 판별 개선 + 세션 안정성 강화)
+// ✅ VerifyEmail.tsx 전체 최종 코드 (세션 안정성 + 에러 방지 + 로깅 추가)
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
@@ -17,6 +17,7 @@ const VerifyEmail = () => {
       const { error: sessionError } = await supabase.auth.exchangeCodeForSession(url);
 
       if (sessionError) {
+        console.error("[VERIFY FAIL] Session Error:", sessionError.message);
         toast.error("이메일 인증 실패: 링크가 만료되었거나 잘못되었습니다.");
         navigate("/login", { replace: true });
         return;
@@ -27,6 +28,7 @@ const VerifyEmail = () => {
       const { data: userData, error: userError } = await supabase.auth.getUser();
 
       if (userError || !userData?.user) {
+        console.error("[VERIFY FAIL] Get user error:", userError?.message);
         toast.error("유저 정보를 불러올 수 없습니다.");
         navigate("/login", { replace: true });
         return;
@@ -53,6 +55,7 @@ const VerifyEmail = () => {
         });
 
         if (insertError) {
+          console.error("[VERIFY FAIL] Profile insert error:", insertError.message);
           toast.error("프로필 등록 실패: " + insertError.message);
           return;
         }

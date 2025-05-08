@@ -30,9 +30,9 @@ const SubjectButtons: React.FC = () => {
       icon: <BrainCircuit size={16} className="text-green-500" />,
     },
     {
-      quizId: "Power",
-      title: "문제 수집중",
-      description: "문제를 찾습습니다.",
+      quizId: "expert",
+      title: "생활체육지도사 2급",
+      description: "스포츠 지도사 기출 문제로 합격하기!",
       iconBg: "bg-green-100",
       icon: <BrainCircuit size={16} className="text-green-500" />,
     },
