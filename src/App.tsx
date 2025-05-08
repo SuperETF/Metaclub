@@ -1,5 +1,4 @@
-// ✅ src/App.tsx
-
+// ✅ src/App.tsx (프로필 insert 제거 및 인증 페이지 보호 최종 반영)
 import React, { useEffect } from "react";
 import { BrowserRouter, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -18,53 +17,18 @@ const AppInner: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ 자동 리디렉션 예외처리 (verify-email, reset-password 방지)
+  // ✅ 인증된 사용자가 인증 페이지(/login, /signup)에 접근 시 리디렉션
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const type = params.get("type");
 
-    if (user && type !== "signup" && type !== "recovery") {
+    const isAuthPage = ["/login", "/signup"].includes(location.pathname);
+    const isCallbackFlow = ["signup", "recovery"].includes(type ?? "");
+
+    if (user && isAuthPage && !isCallbackFlow) {
       navigate("/dashboard", { replace: true });
     }
   }, [user, location, navigate]);
-
-  // ✅ 최초 로그인 시 1회 프로필 자동 저장
-  useEffect(() => {
-    const syncProfileIfNeeded = async () => {
-      if (!user || !user.email) return;
-
-      const { data: existing } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (existing) return;
-
-      const { nickname, name, phone, marketing, agreement } = user.user_metadata || {};
-
-      const { error } = await supabase.from("profiles").insert([
-        {
-          id: user.id,
-          email: user.email,
-          name: name || "",
-          nickname: nickname || "",
-          phone: phone || "",
-          bio: "",
-          marketing: marketing ?? false,
-          agreement: agreement ?? false,
-        },
-      ]);
-
-      if (error) {
-        console.error("❌ profiles insert 실패:", error.message);
-      } else {
-        console.log("✅ profiles 자동 저장 완료");
-      }
-    };
-
-    syncProfileIfNeeded();
-  }, [user]);
 
   if (isLoading) {
     return <div className="pt-28 text-center">로딩 중...</div>;

@@ -1,4 +1,4 @@
-// src/routes/AppRoutes.tsx
+// ✅ src/routes/AppRoutes.tsx (RequireAuth 적용 완료)
 import React from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import ResponsiveContainer from "../layouts/ResponsiveContainer";
@@ -16,7 +16,8 @@ import MyPostsPage from "../pages/MyPostPage";
 import Header from "../components/Dashboard/Header";
 import EducationWrite from "../pages/EducationWrite";
 import ResetPassword from "../pages/ResetPassword";
-import VerifyEmail from "../pages/VerifyEmail"; // ✅ 추가
+import VerifyEmail from "../pages/VerifyEmail";
+import RequireAuth from "./RequireAuth";
 
 const LayoutWithTabs = () => (
   <>
@@ -34,20 +35,21 @@ const AppRoutes: React.FC = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/verify-email" element={<VerifyEmail />} /> {/* ✅ 추가됨 */}
+      <Route path="/verify-email" element={<VerifyEmail />} />
 
       {/* ✅ 헤더 포함 라우트 그룹 */}
       <Route element={<LayoutWithTabs />}>
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/mypage" element={<MyPage />} />
-        <Route path="/myposts" element={<MyPostsPage />} />
-        <Route path="/edit-profile" element={<EditProfile />} />
+        <Route path="/mypage" element={<RequireAuth><MyPage /></RequireAuth>} />
+        <Route path="/myposts" element={<RequireAuth><MyPostsPage /></RequireAuth>} />
+        <Route path="/edit-profile" element={<RequireAuth><EditProfile /></RequireAuth>} />
+        <Route path="/write" element={<RequireAuth><WritePage /></RequireAuth>} />
+        <Route path="/write/:id" element={<RequireAuth><WritePage /></RequireAuth>} />
+        <Route path="/education/write" element={<RequireAuth><EducationWrite /></RequireAuth>} />
+
         <Route path="/quiz/:id" element={<QuizStart />} />
         <Route path="/quiz-result/:resultId" element={<QuizResult />} />
         <Route path="/post/:id" element={<PostDetailPage />} />
-        <Route path="/write" element={<WritePage />} />
-        <Route path="/write/:id" element={<WritePage />} />
-        <Route path="/education/write" element={<EducationWrite />} />
       </Route>
 
       {/* ✅ 기본 경로 */}

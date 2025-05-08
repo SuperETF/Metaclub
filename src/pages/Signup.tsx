@@ -1,4 +1,4 @@
-// ✅ Supabase 이메일 인증 로직을 포함한 전체 Signup.tsx 코드
+ //Signup.tsx 코드
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -103,11 +103,11 @@ const Signup: React.FC = () => {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/verify-email`,
+        emailRedirectTo: `${window.location.origin}/verify-email`, // 🔥 이게 맞아
         data: { nickname, name, phone, marketing, agreement },
       },
     });
-
+  
     if (error) {
       toast.error(
         error.message.includes("User already registered")

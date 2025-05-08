@@ -1,6 +1,6 @@
-// src/pages/Login.tsx
+// ✅ src/pages/Login.tsx (from 상태 기반 리디렉션 포함 최종 리팩토링)
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { toast } from "react-toastify";
 import { getFriendlyError } from "../utils/getFriendlyError";
@@ -8,10 +8,12 @@ import "react-toastify/dist/ReactToastify.css";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/dashboard";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // 비밀번호 재설정 모달 상태
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetSent, setResetSent] = useState(false);
@@ -29,7 +31,7 @@ const Login: React.FC = () => {
       return;
     }
     toast.success("로그인 성공!");
-    navigate("/dashboard");
+    navigate(from, { replace: true });
   };
 
   const handleResetRequest = async () => {
