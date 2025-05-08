@@ -12,21 +12,21 @@ const banners: BannerItem[] = [
   {
     title: "메-클에 오신 것을 환영합니다 🎉",
     description: "10% 더 높은 경쟁력을 갖추기 위한\n자료 공유 커뮤니티입니다.",
-    imageUrl: "images/Be1.png",
+    imageUrl: "/images/Be1.png",      // ← 앞에 슬래시 필수
     linkUrl: "https://metaclass.club/dashboard",
     bgColorClass: "from-indigo-50 to-indigo-100",
   },
   {
     title: "누군가에겐 큰 인사이트가 됩니다🍀",
     description: "평범해 보여도 누군가에겐\n큰 배움의 기회가 될 수 있어요 😌",
-    imageUrl: "images/Be2.png",
+    imageUrl: "/images/Be2.png",      // ← 앞에 슬래시 필수
     linkUrl: "https://metaclass.club/dashboard",
     bgColorClass: "from-indigo-50 to-indigo-100",
   },
   {
     title: "지금 기초해부학에 도전해보세요 👍",
     description: "당신의 기초 지식 능력은 몇 점일까요?",
-    imageUrl: "images/Be3.png",
+    imageUrl: "/images/Be3.png",      // ← 앞에 슬래시 필수
     linkUrl: "https://metaclass.club/dashboard",
     bgColorClass: "from-indigo-50 to-indigo-100",
   },
@@ -56,7 +56,7 @@ const LoanBanner: React.FC = () => {
         href={current.linkUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className={`block rounded-xl p-4 mb-3 flex flex-row items-center justify-between gap-4
+        className={`block rounded-xl p-4 mb-3 flex items-center justify-between gap-4
           bg-gradient-to-r ${current.bgColorClass}
           transition-all duration-500 ease-in-out transform
           ${fade ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"}
