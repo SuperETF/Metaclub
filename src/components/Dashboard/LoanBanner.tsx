@@ -12,7 +12,7 @@ const banners: BannerItem[] = [
   {
     title: "메-클에 오신 것을 환영합니다 🎉",
     description: "10% 더 높은 경쟁력을 갖추기 위한\n자료 공유 커뮤니티입니다.",
-    imageUrl: "/images/Be1.png",      // ← 앞에 슬래시 필수
+    imageUrl: "https://mivnacfecycugbbdwixv.supabase.co/storage/v1/object/sign/benner/B1.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zYmRjZDUyOC01OTUwLTQ3YzQtYmQ5ZC05MDQ5ODI3Y2U3ZDciLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJiZW5uZXIvQjEucG5nIiwiaWF0IjoxNzQ2Njk5ODA4LCJleHAiOjE3NDkyOTE4MDh9.OKVGsMqsR13BjU6Z8xavOz7xTEUaOY-HyF2Ii7Y9VcY",      // ← 앞에 슬래시 필수
     linkUrl: "https://metaclass.club/dashboard",
     bgColorClass: "from-indigo-50 to-indigo-100",
   },
@@ -20,14 +20,14 @@ const banners: BannerItem[] = [
     title: "누군가에겐 큰 인사이트가 됩니다🍀",
     description: "평범해 보여도 누군가에겐\n큰 배움의 기회가 될 수 있어요 😌",
     imageUrl: "/images/Be2.png",      // ← 앞에 슬래시 필수
-    linkUrl: "https://metaclass.club/dashboard",
+    linkUrl: "https://mivnacfecycugbbdwixv.supabase.co/storage/v1/object/sign/benner/B2.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zYmRjZDUyOC01OTUwLTQ3YzQtYmQ5ZC05MDQ5ODI3Y2U3ZDciLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJiZW5uZXIvQjIucG5nIiwiaWF0IjoxNzQ2Njk5ODUzLCJleHAiOjE3NDkyOTE4NTN9.DWuEmEetkYudKSgx8qU19e_nPmqZWK2T78aKYz8sgH8",
     bgColorClass: "from-indigo-50 to-indigo-100",
   },
   {
     title: "지금 기초해부학에 도전해보세요 👍",
     description: "당신의 기초 지식 능력은 몇 점일까요?",
     imageUrl: "/images/Be3.png",      // ← 앞에 슬래시 필수
-    linkUrl: "https://metaclass.club/dashboard",
+    linkUrl: "https://mivnacfecycugbbdwixv.supabase.co/storage/v1/object/sign/benner/B3.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zYmRjZDUyOC01OTUwLTQ3YzQtYmQ5ZC05MDQ5ODI3Y2U3ZDciLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJiZW5uZXIvQjMucG5nIiwiaWF0IjoxNzQ2Njk5ODYyLCJleHAiOjE3NDkyOTE4NjJ9.MHf-exZRlUl5B_wDf1llylV50ajAdb7oaosESNrujto",
     bgColorClass: "from-indigo-50 to-indigo-100",
   },
 ];
