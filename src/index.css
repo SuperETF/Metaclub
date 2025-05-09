@@ -58,6 +58,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ✅ 빈 문단(줄바꿈만 있는 줄)도 시각적으로 공간 차지하도록 처리 */
+.prose p:empty::before {
+  content: '';
+  display: block;
+  height: 1.5em;
+}
+
 /* ✅ 유틸리티 클래스 */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

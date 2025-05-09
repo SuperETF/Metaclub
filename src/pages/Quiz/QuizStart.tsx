@@ -28,7 +28,10 @@ const QuizStart: React.FC = () => {
     { questionId: string; selected: number; isCorrect: boolean }[]
   >([]);
 
-  // ▶ 로그인 체크: basic이 아닌 퀴즈는 로그인 필요
+  // ✅ 배열 셔플 함수
+  const shuffleArray = <T,>(array: T[]): T[] =>
+    [...array].sort(() => Math.random() - 0.5);
+
   useEffect(() => {
     if (!user && quizId !== "basic") {
       toast.info("이 퀴즈를 풀려면 로그인이 필요합니다.", {
@@ -39,27 +42,23 @@ const QuizStart: React.FC = () => {
     }
   }, [user, quizId, navigate]);
 
-  // 퀴즈 문항 불러오기
   useEffect(() => {
     if (!quizId) return;
     supabase
       .from("questions")
       .select("id, question, options, correct_answer, explanation")
       .eq("quiz_id", quizId)
-      .order("created_at", { ascending: true })
       .then(({ data, error }) => {
-        if (!error && data) setQuestions(data);
+        if (!error && data) setQuestions(shuffleArray(data));
       });
   }, [quizId]);
 
-  // 문제 전환 시 초기화
   useEffect(() => {
     setTimeLeft(20);
     setShowResult(false);
     setSelectedOption(null);
   }, [currentIndex]);
 
-  // 카운트다운 타이머
   useEffect(() => {
     if (showResult) return;
     if (timeLeft <= 0) {
@@ -150,7 +149,6 @@ const QuizStart: React.FC = () => {
 
   return (
     <div className="relative bg-gray-50 min-h-screen w-full max-w-screen-sm mx-auto pt-24 pb-12 px-4">
-      {/* 타이머 헤더 */}
       <div className="fixed top-14 left-0 right-0 bg-white shadow-sm z-10 px-4">
         <div className="max-w-screen-sm mx-auto flex justify-between items-center py-3">
           <div className="text-xl font-bold">
@@ -169,7 +167,6 @@ const QuizStart: React.FC = () => {
         </div>
       </div>
 
-      {/* 문제 & 옵션 */}
       <div className="mt-6">
         <div className="bg-white p-5 rounded-2xl shadow">
           <p className="text-indigo-600 text-sm mb-2">객관식</p>
