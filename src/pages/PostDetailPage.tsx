@@ -2,7 +2,9 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
+import DOMPurify from "dompurify";
 import { toast } from "react-toastify";
+
 import LoanBanner from "../components/Dashboard/LoanBanner";
 import FloatingWriteButton from "../components/Dashboard/FloatingWriteButton";
 import "react-toastify/dist/ReactToastify.css";
@@ -14,10 +16,10 @@ const categoryMap: Record<string, string> = {
 };
 
 const PostDetailPage: React.FC = () => {
-  const hasTrackedView = useRef(false);
   const { id } = useParams<{ id: string }>();
   const user = useUser();
   const navigate = useNavigate();
+  const hasTrackedView = useRef(false);
 
   const [post, setPost] = useState<any>(null);
   const [comments, setComments] = useState<any[]>([]);
@@ -27,14 +29,13 @@ const PostDetailPage: React.FC = () => {
   const [currentReaction, setCurrentReaction] = useState<"like" | "dislike" | null>(null);
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+    const d = new Date(dateStr);
+    return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
   };
 
   const refreshPost = async () => {
     const { data } = await supabase.from("posts").select("*").eq("id", id).single();
     if (data) setPost(data);
-
     if (user) {
       const { data: reaction } = await supabase
         .from("post_reactions")
@@ -52,41 +53,31 @@ const PostDetailPage: React.FC = () => {
       .select("*")
       .eq("post_id", id)
       .order("created_at", { ascending: false });
-
     if (!error) setComments(data || []);
   };
 
   useEffect(() => {
     if (hasTrackedView.current) return;
     hasTrackedView.current = true;
-
-    const trackView = async () => {
+    (async () => {
       let anonId = user?.id ?? null;
-
-      if (!user && typeof window !== "undefined") {
+      if (!user) {
         anonId = localStorage.getItem("anon_id") || crypto.randomUUID();
         localStorage.setItem("anon_id", anonId);
       }
 
-      try {
-        const { error } = await supabase.from("post_views").insert({
-          post_id: id,
-          user_id: user?.id ?? null,
-          anonymous_id: anonId,
-        });
-
-        if (error && error.code !== "23505" && error.code !== "409") {
-          console.error("조회수 등록 실패:", error.message);
-        }
-      } catch (err: any) {
-        console.error("조회수 등록 실패:", err?.message || err);
+      const { error: viewError } = await supabase.from("post_views").insert({
+        post_id: id,
+        user_id: user?.id ?? null,
+        anonymous_id: anonId,
+      });
+      if (viewError && viewError.code !== "23505" && viewError.code !== "409") {
+        console.error("조회수 등록 실패:", viewError.message);
       }
 
       await refreshPost();
       await loadComments();
-    };
-
-    trackView();
+    })();
   }, [id, user]);
 
   const handleReaction = async (type: "like" | "dislike") => {
@@ -105,66 +96,94 @@ const PostDetailPage: React.FC = () => {
       }
       setCurrentReaction(type);
     }
-
     await refreshPost();
   };
 
   const handleAddComment = async () => {
     if (!user) return toast.warn("로그인이 필요합니다.");
     if (!commentText.trim()) return;
-
-    const { data: profile } = await supabase.from("profiles").select("nickname").eq("id", user.id).single();
-    await supabase.from("comments").insert([
-      {
-        post_id: id,
-        user_id: user.id,
-        nickname: profile?.nickname || "익명",
-        content: commentText,
-      },
-    ]);
-
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("nickname")
+      .eq("id", user.id)
+      .single();
+    await supabase.from("comments").insert([{
+      post_id: id,
+      user_id: user.id,
+      nickname: profile?.nickname ?? "익명",
+      content: commentText,
+    }]);
     setCommentText("");
     await loadComments();
   };
 
-  const handleEditComment = async (commentId: string) => {
-    await supabase
-      .from("comments")
-      .update({ content: editText })
-      .eq("id", commentId)
-      .eq("user_id", user?.id);
-
+  const handleEditComment = async (cid: string) => {
+    await supabase.from("comments").update({ content: editText }).eq("id", cid).eq("user_id", user?.id);
     toast.success("댓글이 수정되었습니다.");
     setEditingCommentId(null);
     setEditText("");
     await loadComments();
   };
 
-  const handleDeleteComment = async (commentId: string) => {
-    await supabase.from("comments").delete().eq("id", commentId).eq("user_id", user?.id);
+  const handleDeleteComment = async (cid: string) => {
+    await supabase.from("comments").delete().eq("id", cid).eq("user_id", user?.id);
     toast.success("댓글이 삭제되었습니다.");
     await loadComments();
   };
 
+  const handleEditPost = () => {
+    if (post?.user_id !== user?.id) return toast.warn("수정 권한이 없습니다.");
+    navigate(`/write/${id}`, {
+      state: {
+        from: "dashboard",
+        scrollY: window.scrollY,
+        category: post?.category,
+      },
+    });
+  };
+
+  const handleDeletePost = async () => {
+    if (!user) return toast.warn("로그인이 필요합니다.");
+    if (post?.user_id !== user.id) return toast.warn("삭제 권한이 없습니다.");
+    const { error } = await supabase.from("posts").delete().eq("id", id);
+    if (error) return toast.error("삭제 실패: " + error.message);
+    toast.success("게시글이 삭제되었습니다.");
+    navigate("/dashboard");
+  };
+
   const scrollY = window.scrollY;
-  const selectedCategory = post?.category || "free";
+  const selectedCategory = post?.category ?? "free";
 
   return (
     <>
       <div className="pt-28 pb-20 px-4 max-w-screen-md mx-auto">
         {post && (
           <div className="mb-6 bg-white p-5 rounded-xl shadow">
+            {user?.id === post.user_id && (
+              <div className="flex justify-end gap-2 mb-2">
+                <button onClick={handleEditPost} className="text-blue-600 underline text-sm">
+                  수정
+                </button>
+                <button onClick={handleDeletePost} className="text-red-600 underline text-sm">
+                  삭제
+                </button>
+              </div>
+            )}
+
             <div className="text-sm text-blue-600 font-medium mb-1">
-              {categoryMap[post.category] || post.category}
+              {categoryMap[post.category] ?? post.category}
             </div>
             <h1 className="text-2xl font-bold mb-2">{post.title}</h1>
             <div className="text-sm text-gray-500 mb-3">
               {post.author} · {formatDate(post.created_at)}
             </div>
 
+            {/* ✅ HTML content 무조건 렌더링 */}
             <div
-              className="text-gray-800 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: post.content }}
+              className="text-gray-800 leading-relaxed prose max-w-none"
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(post.content),
+              }}
             />
 
             <div className="flex justify-start gap-4 mt-4 pt-3 border-t border-gray-100 text-sm text-gray-500">
@@ -176,7 +195,7 @@ const PostDetailPage: React.FC = () => {
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
-                <i className="fas fa-thumbs-up"></i> {Math.max(post.likes ?? 0, 0)}
+                👍 {Math.max(post.likes ?? 0, 0)}
               </button>
               <button
                 onClick={() => handleReaction("dislike")}
@@ -186,17 +205,16 @@ const PostDetailPage: React.FC = () => {
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
-                <i className="fas fa-thumbs-down"></i> {Math.max(post.dislikes ?? 0, 0)}
+                👎 {Math.max(post.dislikes ?? 0, 0)}
               </button>
-              <span className="flex items-center gap-1 text-gray-500">
-                <i className="fas fa-eye"></i> {post.views}
-              </span>
+              <span className="flex items-center gap-1">👁️ {post.views}</span>
             </div>
           </div>
         )}
 
         <div className="bg-white rounded-xl shadow p-5 mb-8">
           <h2 className="font-semibold mb-3">댓글 {comments.length}</h2>
+
           {user ? (
             <div className="flex items-center mb-4">
               <input
@@ -215,8 +233,8 @@ const PostDetailPage: React.FC = () => {
             </div>
           ) : (
             <div className="flex justify-center items-center mb-4 py-4 border rounded bg-gray-50 text-gray-500 text-sm">
-              댓글을 작성하려면
-              <button onClick={() => navigate('/login')} className="text-blue-600 underline ml-1">
+              댓글 작성을 위해
+              <button onClick={() => navigate("/login")} className="ml-1 text-blue-600 underline">
                 로그인
               </button>
               이 필요합니다.
@@ -224,36 +242,42 @@ const PostDetailPage: React.FC = () => {
           )}
 
           <div className="space-y-4">
-            {comments.map((comment, idx) => (
-              <div key={idx} className="text-sm">
+            {comments.map((c) => (
+              <div key={c.id} className="text-sm">
                 <div className="flex justify-between mb-1">
-                  <span className="font-medium">{comment.nickname}</span>
-                  <span className="text-gray-400 text-xs">{formatDate(comment.created_at)}</span>
+                  <span className="font-medium">{c.nickname}</span>
+                  <span className="text-gray-400 text-xs">{formatDate(c.created_at)}</span>
                 </div>
-                {editingCommentId === comment.id ? (
+
+                {editingCommentId === c.id ? (
                   <div className="flex items-center gap-2">
                     <input
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
                       className="border px-2 py-1 rounded flex-1"
                     />
-                    <button onClick={() => handleEditComment(comment.id)} className="text-blue-600 text-sm">저장</button>
-                    <button onClick={() => setEditingCommentId(null)} className="text-gray-400 text-sm">취소</button>
+                    <button onClick={() => handleEditComment(c.id)} className="text-blue-600 text-sm">
+                      저장
+                    </button>
+                    <button onClick={() => setEditingCommentId(null)} className="text-gray-400 text-sm">
+                      취소
+                    </button>
                   </div>
                 ) : (
-                  <p className="text-gray-800 whitespace-pre-wrap">{comment.content}</p>
+                  <p className="text-gray-800 whitespace-pre-wrap">{c.content}</p>
                 )}
-                {user?.id === comment.user_id && (
+
+                {user?.id === c.user_id && (
                   <div className="flex gap-2 mt-1 text-xs text-gray-400">
                     <button
                       onClick={() => {
-                        setEditingCommentId(comment.id);
-                        setEditText(comment.content);
+                        setEditingCommentId(c.id);
+                        setEditText(c.content);
                       }}
                     >
                       수정
                     </button>
-                    <button onClick={() => handleDeleteComment(comment.id)}>삭제</button>
+                    <button onClick={() => handleDeleteComment(c.id)}>삭제</button>
                   </div>
                 )}
               </div>
@@ -264,7 +288,6 @@ const PostDetailPage: React.FC = () => {
         <LoanBanner />
       </div>
 
-      {/* 플로팅 작성 버튼 */}
       <div className="fixed bottom-6 left-0 right-0 z-50 px-4">
         <div className="w-full px-4 md:px-8 flex justify-end">
           <FloatingWriteButton scrollY={scrollY} selectedCategory={selectedCategory} />

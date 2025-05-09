@@ -20,36 +20,40 @@ const WritePage: React.FC = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("free");
+  const [loading, setLoading] = useState(isEdit); // 수정 모드일 때만 로딩 시작
 
   useEffect(() => {
-    if (isEdit && user?.id) {
-      const fetchPost = async () => {
-        const { data, error } = await supabase
-          .from("posts")
-          .select("*")
-          .eq("id", id)
-          .single();
+    if (!isEdit || !user?.id) return;
 
-        if (error || !data) {
-          toast.error("게시글 정보를 불러오지 못했습니다.");
-          navigate("/dashboard");
-          return;
-        }
+    const fetchPost = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("posts")
+        .select("*")
+        .eq("id", id)
+        .single();
 
-        if (data.user_id !== user.id) {
-          toast.error("본인이 작성한 게시글만 수정할 수 있습니다.");
-          navigate("/dashboard");
-          return;
-        }
+      if (error || !data) {
+        toast.error("게시글 정보를 불러오지 못했습니다.");
+        navigate("/dashboard");
+        return;
+      }
 
-        setTitle(data.title);
-        setContent(data.content);
-        setCategory(data.category);
-      };
+      if (data.user_id !== user.id) {
+        toast.error("본인이 작성한 게시글만 수정할 수 있습니다.");
+        navigate("/dashboard");
+        return;
+      }
 
-      fetchPost();
-    }
-  }, [id, isEdit, user]);
+      // ✅ 기존 데이터 반영
+      setTitle(data.title);
+      setContent(data.content);
+      setCategory(data.category);
+      setLoading(false);
+    };
+
+    fetchPost();
+  }, [id, isEdit, user?.id]);
 
   const handleSubmit = async () => {
     if (!user) {
@@ -74,14 +78,7 @@ const WritePage: React.FC = () => {
         console.error("UPDATE 실패:", error.message);
       } else {
         toast.success("게시글이 수정되었습니다 ✏️");
-        if (from === "myposts") {
-          navigate("/myposts");
-        } else {
-          navigate("/dashboard", {
-            replace: false,
-            state: { scrollY, category: categoryState },
-          });
-        }
+        navigate(`/post/${id}`);
       }
     } else {
       const { data: profile, error: profileError } = await supabase
@@ -126,6 +123,14 @@ const WritePage: React.FC = () => {
       }
     }
   };
+
+  if (loading) {
+    return (
+      <div className="pt-28 text-center text-gray-500">
+        게시글 정보를 불러오는 중입니다...
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-screen-md mx-auto px-4 py-28">
