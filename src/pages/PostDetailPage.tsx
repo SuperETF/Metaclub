@@ -178,13 +178,13 @@ const PostDetailPage: React.FC = () => {
               {post.author} · {formatDate(post.created_at)}
             </div>
 
-            {/* ✅ HTML content 무조건 렌더링 */}
-            <div
-              className="text-gray-800 leading-relaxed prose max-w-none"
-              dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(post.content),
-              }}
-            />
+            {/* ✅ iframe으로 HTML 전체 렌더링 */}
+            <iframe
+  title="Post Content"
+  className="w-full min-h-[100vh] border-0"
+  srcDoc={DOMPurify.sanitize(post.content)}
+  sandbox=""
+/>
 
             <div className="flex justify-start gap-4 mt-4 pt-3 border-t border-gray-100 text-sm text-gray-500">
               <button
