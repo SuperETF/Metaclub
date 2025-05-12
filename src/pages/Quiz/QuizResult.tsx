@@ -247,7 +247,7 @@ const QuizResult: React.FC = () => {
               className="text-gray-500 text-sm hover:text-blue-600"
             >
               대시보드로 이동
-            </button>커
+            </button>
           </div>
         </div>
       </div>

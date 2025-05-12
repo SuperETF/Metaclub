@@ -12,6 +12,7 @@ interface Profiles {
   nickname: string;
   phone: string;
   bio: string;
+  img?: string;
 }
 
 interface QuizResult {
@@ -38,7 +39,6 @@ const MyPage: React.FC = () => {
   const [showReasonModal, setShowReasonModal] = useState(false);
   const [reason, setReason] = useState("");
 
-  // ▶ 로그인 가드: 로그인 안 됐으면 대시보드로
   useEffect(() => {
     if (!user) {
       toast.info("로그인이 필요합니다.", { position: "top-center", autoClose: 2000 });
@@ -46,21 +46,18 @@ const MyPage: React.FC = () => {
     }
   }, [user, navigate]);
 
-  // ▶ 사용자 데이터 로드
   useEffect(() => {
     if (!user) return;
 
-    // 내 프로필
     supabase
       .from("profiles")
-      .select("name, nickname, phone, bio")
+      .select("name, nickname, phone, bio, img")
       .eq("id", user.id)
       .single()
       .then(({ data, error }) => {
         if (!error && data) setProfile(data as Profiles);
       });
 
-    // 내가 푼 퀴즈
     supabase
       .from("quiz_results")
       .select("id, quiz_id, score, total, created_at")
@@ -68,7 +65,6 @@ const MyPage: React.FC = () => {
       .order("created_at", { ascending: false })
       .then(({ data }) => setQuizResults(data || []));
 
-    // 내가 쓴 게시물
     supabase
       .from("posts")
       .select("id, title, created_at")
@@ -108,8 +104,16 @@ const MyPage: React.FC = () => {
         {/* 프로필 */}
         <div className="bg-white rounded-lg shadow-sm p-4 mt-3">
           <div className="flex items-center">
-            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
-              <i className="fas fa-user-circle text-4xl text-gray-400"></i>
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+              {profile?.img ? (
+                <img
+                  src={profile.img}
+                  alt="프로필"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <i className="fas fa-user-circle text-4xl text-gray-400"></i>
+              )}
             </div>
             <div className="ml-4 flex-1">
               <h2 className="font-medium text-lg">{profile?.nickname || "닉네임"}</h2>
@@ -133,9 +137,7 @@ const MyPage: React.FC = () => {
           <div className="divide-y">
             <div
               className="py-3 flex justify-between items-center cursor-pointer"
-              onClick={() =>
-                quizResults.length > 0 && navigate(`/quiz-result/${quizResults[0].id}`)
-              }
+              onClick={() => quizResults.length > 0 && navigate(`/quiz-result/${quizResults[0].id}`)}
             >
               <div className="flex items-center">
                 <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center mr-3">

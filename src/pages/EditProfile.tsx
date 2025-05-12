@@ -13,8 +13,10 @@ const EditProfile: React.FC = () => {
   const [nickname, setNickname] = useState("");
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
-  const [img, setImg] = useState<string | null>(null); // img 미리보기용
-  const [pendingImgUrl, setPendingImgUrl] = useState<string | null>(null); // 저장 대기 이미지
+  const [img, setImg] = useState<string | null>(null);
+  const [selectedAvatarUrl, setSelectedAvatarUrl] = useState<string | null>(null);
+
+  const AVATAR_URL = "https://mivnacfecycugbbdwixv.supabase.co/storage/v1/object/public/avatars//profile.png";
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -37,33 +39,18 @@ const EditProfile: React.FC = () => {
     fetchProfile();
   }, [session]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !session?.user) return;
-
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${session.user.id}_${Date.now()}.${fileExt}`;
-    const filePath = `${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(filePath, file, { upsert: true });
-
-    if (uploadError) {
-      toast.error("이미지 업로드 실패: " + uploadError.message);
-      return;
-    }
-
-    const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
-    setPendingImgUrl(data.publicUrl);
-  };
-
   const handleSave = async () => {
     if (!session?.user) return;
 
     const { error } = await supabase
       .from("profiles")
-      .update({ name, nickname, phone, bio, img: pendingImgUrl ?? img })
+      .update({
+        name,
+        nickname,
+        phone,
+        bio,
+        img: selectedAvatarUrl ?? img,
+      })
       .eq("id", session.user.id);
 
     if (!error) {
@@ -86,24 +73,21 @@ const EditProfile: React.FC = () => {
           </p>
 
           <div className="space-y-4">
-            {/* 프로필 이미지 */}
+            {/* 프로필 이미지 선택 */}
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 rounded-full overflow-hidden border border-gray-300">
                 <img
-                  src={pendingImgUrl || img || "/default-avatar.png"}
+                  src={selectedAvatarUrl || img || "/default-avatar.png"}
                   alt="프로필"
                   className="w-full h-full object-cover"
                 />
               </div>
-              <label className="text-sm text-blue-600 cursor-pointer hover:underline">
-                프로필 사진 변경
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                />
-              </label>
+              <button
+                onClick={() => setSelectedAvatarUrl(AVATAR_URL)}
+                className="text-sm text-blue-600 border border-blue-600 px-3 py-1 rounded hover:bg-blue-50"
+              >
+                기본 이모티콘 선택
+              </button>
             </div>
 
             <div>
