@@ -146,7 +146,7 @@ const WritePage: React.FC = () => {
         <option value="free">자유게시판</option>
         <option value="question">문의게시판</option>
         <option value="info">정보게시판</option>
-        <option value="info">문제 오류</option>
+        <option value="complaint">문제 오류</option>
       </select>
 
       <input
