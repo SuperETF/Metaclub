@@ -1,8 +1,9 @@
-// ✅ src/pages/Dashboard.tsx (PostList만 full-width로 분리 완료)
+// src/pages/Dashboard.tsx
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
 import QuizStatusCard from "../components/Dashboard/QuizStatusCard";
+import QuizRanking from "../components/Dashboard/QuizRanking";   // ← 추가
 import LoanBanner from "../components/Dashboard/LoanBanner";
 import HotPosts from "../components/Dashboard/HotPosts";
 import EducationBoard from "../components/Dashboard/EducationBoard";
@@ -26,11 +27,7 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const state = location.state as { category?: string; scrollY?: number } | null;
-
-    if (state?.category) {
-      setSelectedCategory(state.category);
-    }
-
+    if (state?.category) setSelectedCategory(state.category);
     if (typeof state?.scrollY === "number") {
       requestAnimationFrame(() => {
         window.scrollTo({ top: state.scrollY, behavior: "instant" as ScrollBehavior });
@@ -45,6 +42,8 @@ const Dashboard: React.FC = () => {
         <div className="w-full px-2 sm:px-4 md:px-8 space-y-8">
           <SubjectButtons />
           <QuizStatusCard />
+          <QuizRanking />   {/* ← 퀴즈 현황 바로 밑에 삽입 */}
+
           <LoanBanner />
           <HotPosts />
 
@@ -57,7 +56,7 @@ const Dashboard: React.FC = () => {
           </section>
         </div>
 
-        {/* ✅ PostList만 전체 화면 확장 (좌우 여백 제거) */}
+        {/* PostList만 전체 화면 확장 (좌우 여백 제거) */}
         <div className="w-full bg-gray-50">
           <section className="space-y-4">
             <CategoryTabs selected={selectedCategory} onChange={setSelectedCategory} />

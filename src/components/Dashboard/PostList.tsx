@@ -50,6 +50,22 @@ const PostList: React.FC<Props> = ({ category }) => {
     return `${Math.floor(diff / 86400)}일 전`;
   };
 
+  const decodeHtmlEntities = (str: string) => {
+    const txt = document.createElement("textarea");
+    txt.innerHTML = str;
+    return txt.value;
+  };
+
+  const stripHtml = (html: string) => {
+    const decoded = decodeHtmlEntities(html);
+    return decoded
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')         // style 태그 제거
+      .replace(/<img[^>]*alt=".*?"[^>]*>/gi, '')              // img 태그 제거 (alt 포함)
+      .replace(/<[^>]+>/g, '')                                // 모든 HTML 태그 제거
+      .replace(/\n/g, ' ')                                    // 줄바꿈 제거
+      .trim();
+  };
+
   return (
     <div className="bg-gray-50 space-y-2">
       {posts.map((post) => (
@@ -64,10 +80,9 @@ const PostList: React.FC<Props> = ({ category }) => {
           <h3 className="font-semibold text-base text-gray-900 mb-1">
             {post.title}
           </h3>
-          <div
-            className="text-sm text-gray-700 line-clamp-2 text-left"
-            children={post.content.replace(/<[^>]+>/g, '')}
-          />
+          <div className="text-sm text-gray-700 line-clamp-2 text-left overflow-hidden break-words">
+            {stripHtml(post.content)}
+          </div>
           <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1">

@@ -15,7 +15,7 @@ interface QuizResult {
 const QuizStatusCard: React.FC = () => {
   const user = useUser();
   const navigate = useNavigate();
-  const [latestResult, setLatestResult] = useState<QuizResult | null>(null);
+  const [results, setResults] = useState<QuizResult[]>([]);
 
   const quizNameMap: Record<string, { label: string; icon: React.ReactNode }> = {
     basic: {
@@ -30,6 +30,10 @@ const QuizStatusCard: React.FC = () => {
       label: "신경해부학",
       icon: <BrainCircuit size={20} className="text-white" />,
     },
+    expert: {
+      label: "생활체육지도사 2급",
+      icon: <BrainCircuit size={20} className="text-white" />,
+    },
   };
 
   useEffect(() => {
@@ -39,23 +43,24 @@ const QuizStatusCard: React.FC = () => {
         .from("quiz_results")
         .select("id, quiz_id, score, total, created_at")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order("created_at", { ascending: false });
 
-      if (!error && data) setLatestResult(data);
+      if (!error && data) {
+        const latestByQuizId: Record<string, QuizResult> = {};
+        for (const item of data) {
+          if (!latestByQuizId[item.quiz_id]) {
+            latestByQuizId[item.quiz_id] = item;
+          }
+        }
+
+        const uniqueResults = Object.values(latestByQuizId)
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, 3);
+
+        setResults(uniqueResults);
+      }
     })();
   }, [user]);
-
-  const percentage =
-    latestResult && latestResult.total > 0
-      ? Math.round((latestResult.score / latestResult.total) * 100)
-      : 0;
-
-  const quizData =
-    latestResult && quizNameMap[latestResult.quiz_id]
-      ? quizNameMap[latestResult.quiz_id]
-      : { label: latestResult?.quiz_id || "", icon: null };
 
   return (
     <div className="bg-white rounded-xl p-4 mb-5 shadow-sm">
@@ -70,33 +75,47 @@ const QuizStatusCard: React.FC = () => {
         </div>
       </div>
 
-      {latestResult ? (
-        <div className="flex items-center justify-between bg-blue-50 rounded-lg p-3">
-          <div className="flex items-center">
-            <div className="bg-blue-500 w-10 h-10 rounded-full flex items-center justify-center mr-3">
-              {quizData.icon}
-            </div>
-            <div>
-              <p className="text-sm font-medium">{quizData.label} 퀴즈</p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                총 {latestResult.total}문제 중 {latestResult.score}문제 완료
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-col items-end">
-            <span className="text-sm font-medium text-blue-500">
-              {percentage}%
-            </span>
-            <div className="w-16 h-1.5 bg-gray-200 rounded-full mt-1">
-              <div
-                className="h-full bg-blue-500 rounded-full"
-                style={{ width: `${percentage}%` }}
-              />
-            </div>
-          </div>
-        </div>
-      ) : (
+      {results.length === 0 ? (
         <div className="text-sm text-gray-500">아직 푼 퀴즈가 없습니다.</div>
+      ) : (
+        <div className="space-y-3">
+          {results.map((result) => {
+            const percentage = result.total > 0 ? Math.round((result.score / result.total) * 100) : 0;
+            const quizData = quizNameMap[result.quiz_id] || {
+              label: `${result.quiz_id} 퀴즈`,
+              icon: <Dumbbell size={20} className="text-white" />,
+            };
+
+            return (
+              <div
+                key={result.quiz_id}
+                onClick={() => navigate(`/quiz/${result.quiz_id}`)}
+                className="flex items-center justify-between bg-blue-50 rounded-lg p-3 cursor-pointer hover:bg-blue-100"
+              >
+                <div className="flex items-center">
+                  <div className="bg-blue-500 w-10 h-10 rounded-full flex items-center justify-center mr-3">
+                    {quizData.icon}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{quizData.label}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      정답 {result.score}개 / 총 {result.total}문제
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-sm font-medium text-blue-500">{percentage}%</span>
+                  <div className="w-16 h-1.5 bg-gray-200 rounded-full mt-1">
+                    <div
+                      className="h-full bg-blue-500 rounded-full"
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
