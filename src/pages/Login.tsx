@@ -1,15 +1,16 @@
-// ✅ src/pages/Login.tsx (이메일 인증 성공 시 toast 처리 추가)
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { toast } from "react-toastify";
 import { getFriendlyError } from "../utils/getFriendlyError";
+import { useUser } from "@supabase/auth-helpers-react";
 import "react-toastify/dist/ReactToastify.css";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/dashboard";
+  const user = useUser();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,15 +19,49 @@ const Login: React.FC = () => {
   const [resetEmail, setResetEmail] = useState("");
   const [resetSent, setResetSent] = useState(false);
 
-  // ✅ 인증 후 리디렉션되었을 때 toast 메시지 표시
+  // ✅ 인증 후 리디렉션되었을 때 toast 표시 및 profiles upsert → /dashboard
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    if (params.get("verified") === "true") {
-      toast.success("✅ 이메일 인증이 완료되었습니다.");
-      params.delete("verified");
-      navigate(location.pathname, { replace: true });
+    const verified = params.get("verified");
+
+    const processVerifiedUser = async () => {
+      if (verified === "true" && user) {
+        toast.success("✅ 이메일 인증이 완료되었습니다.");
+
+        const { data: existing } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (!existing) {
+          const meta = user.user_metadata;
+          await supabase.from("profiles").upsert({
+            id: user.id,
+            email: user.email,
+            name: meta.name ?? "",
+            nickname: meta.nickname ?? "",
+            phone: meta.phone ?? "",
+            marketing: meta.marketing ?? false,
+            agreement: meta.agreement ?? false,
+          });
+        }
+
+        // URL 파라미터 정리 후 이동
+        params.delete("verified");
+        navigate("/dashboard", { replace: true });
+      }
+    };
+
+    processVerifiedUser();
+  }, [location.search, user, navigate]);
+
+  // ✅ 자동 로그인 상태인 경우 바로 /dashboard 이동
+  useEffect(() => {
+    if (user?.email_confirmed_at) {
+      navigate("/dashboard");
     }
-  }, [location, navigate]);
+  }, [user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +84,7 @@ const Login: React.FC = () => {
       toast.error("이메일을 입력해주세요.");
       return;
     }
-    const { data, error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     if (error) {

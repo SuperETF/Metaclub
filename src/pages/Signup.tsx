@@ -22,12 +22,17 @@ const Signup: React.FC = () => {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isFormValid, setIsFormValid] = useState(false);
 
-  const checkEmailExists = async (email: string) => {
+  const checkEmailExists = async (email: string): Promise<boolean> => {
     setEmailChecking(true);
-    const { data } = await supabase.from("profiles").select("id").eq("email", email).single();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
     setEmailChecking(false);
     return !!data;
   };
+  
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -101,10 +106,11 @@ const Signup: React.FC = () => {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/login?verified=true`,
+        emailRedirectTo: "https://metaclass.club/login?verified=true", // ✅ Supabase 등록 필요
         data: { nickname, name, phone, marketing, agreement },
       },
     });
+    
   
     if (error) {
       toast.error(
@@ -122,10 +128,10 @@ const Signup: React.FC = () => {
         name,
         nickname,
         phone,
-        marketing,
-        agreement,
-        img: "https://mivnacfecycugbbdwixv.supabase.co/storage/v1/object/public/avatars/profile.png", // ✅ 기본 이미지 URL
+        marketing: Boolean(marketing),
+        agreement: Boolean(agreement),
       });
+      
   
       if (insertError) {
         console.error("❌ profiles insert 실패:", insertError.message);
