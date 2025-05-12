@@ -10,6 +10,7 @@ const categories = [
   { label: "자유게시판", value: "free" },
   { label: "문의게시판", value: "question" },
   { label: "정보게시판", value: "info" },
+  { label: "문제 지적", value: "Complaint" },
 ];
 
 const CategoryTabs: React.FC<Props> = ({ selected, onChange }) => {
