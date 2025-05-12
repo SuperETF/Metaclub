@@ -1,9 +1,7 @@
-// ✅ Login.tsx - 디자인 유지 + 기능 추가 최종본
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import { useUser } from "@supabase/auth-helpers-react";
+import { useUser, useSessionContext } from "@supabase/auth-helpers-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -11,53 +9,77 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = useUser();
+  const { isLoading: sessionLoading } = useSessionContext();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   useEffect(() => {
-    const verified = new URLSearchParams(location.search).get("verified");
+    if (sessionLoading) return;
 
     const createProfile = async () => {
-      if (verified === "true" && user) {
-        const { data: existing } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("id", user.id)
+      if (!user || !user.email_confirmed_at) return;
+
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("id, name, nickname, phone")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const isIncomplete =
+        !existing ||
+        !existing.name?.trim() ||
+        !existing.nickname?.trim() ||
+        !existing.phone?.trim();
+
+      if (isIncomplete) {
+        const { data: temp } = await supabase
+          .from("temp_profiles")
+          .select("*")
+          .eq("email", user.email)
           .maybeSingle();
 
-        if (!existing) {
-          const meta = JSON.parse(sessionStorage.getItem("signup_meta") || "{}");
-          const { error } = await supabase.from("profiles").upsert({
-            id: user.id,
-            email: user.email,
-            name: meta.name ?? "",
-            nickname: meta.nickname ?? "",
-            phone: meta.phone ?? "",
-            marketing: meta.marketing ?? false,
-            agreement: meta.agreement ?? false,
-          });
-
-          if (error) {
-            toast.error("프로필 생성 실패: " + error.message);
-          } else {
-            sessionStorage.removeItem("signup_meta");
-          }
+        if (!temp) {
+          toast.error("회원가입 정보가 유실되었습니다. 다시 시도해주세요.");
+          await supabase.auth.signOut();
+          navigate("/signup");
+          return;
         }
 
-        navigate("/dashboard");
+        const { error: upsertError } = await supabase.from("profiles").upsert({
+          id: user.id,
+          email: user.email,
+          name: temp.name,
+          nickname: temp.nickname,
+          phone: temp.phone,
+          marketing: temp.marketing,
+          agreement: temp.agreement,
+        });
+
+        if (upsertError) {
+          console.error("❌ 프로필 upsert 실패:", upsertError.message);
+          toast.error("프로필 저장 실패: " + upsertError.message);
+        } else {
+          await supabase.from("temp_profiles").delete().eq("email", user.email);
+        }
       }
+
+      navigate("/dashboard");
     };
 
     createProfile();
-  }, [user, location.search, navigate]);
+  }, [user, sessionLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      toast.error("로그인 실패: " + error.message);
+      const msg =
+        error.message.includes("Email not confirmed")
+          ? "이메일 인증이 완료되지 않았습니다."
+          : "로그인 실패: " + error.message;
+      toast.error(msg);
       return;
     }
 
@@ -113,10 +135,7 @@ const Login: React.FC = () => {
         </form>
 
         <div className="flex justify-between text-sm text-gray-500 mt-4">
-          <button
-            onClick={() => navigate("/reset-password")}
-            className="hover:text-indigo-600"
-          >
+          <button onClick={() => navigate("/reset-password")} className="hover:text-indigo-600">
             비밀번호 재설정
           </button>
           <button onClick={() => navigate("/signup")} className="hover:text-indigo-600">

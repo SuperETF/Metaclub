@@ -1,4 +1,3 @@
-// ✅ src/App.tsx (최종 수정된 코드 - 인증 페이지 외에서는 리디렉션 안 하도록 개선)
 import React, { useEffect } from "react";
 import { BrowserRouter, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -13,59 +12,29 @@ import "react-toastify/dist/ReactToastify.css";
 
 const AppInner: React.FC = () => {
   const user = useUser();
-  const { isLoading } = useSessionContext();
+  const { isLoading, session } = useSessionContext();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ 인증 흐름 경로가 아닐 때만 자동 리디렉션
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const type = params.get("type");
+    const isVerifiedFlow = location.search.includes("verified=true");
     const isAuthPage = ["/login", "/signup"].includes(location.pathname);
     const isCallbackFlow = ["signup", "recovery"].includes(type ?? "");
 
-    if (user && isAuthPage && !isCallbackFlow) {
+    if (
+      !isLoading &&
+      user &&
+      session &&
+      user.email_confirmed_at &&
+      isAuthPage &&
+      !isCallbackFlow &&
+      !isVerifiedFlow
+    ) {
       navigate("/dashboard", { replace: true });
     }
-  }, [user, location, navigate]);
-
-  // ✅ 최초 로그인 시 1회 프로필 자동 저장
-  useEffect(() => {
-    const syncProfileIfNeeded = async () => {
-      if (!user || !user.email) return;
-
-      const { data: existing } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (existing) return;
-
-      const { nickname, name, phone, marketing, agreement } = user.user_metadata || {};
-
-      const { error } = await supabase.from("profiles").insert([
-        {
-          id: user.id,
-          email: user.email,
-          name: name || "",
-          nickname: nickname || "",
-          phone: phone || "",
-          bio: "",
-          marketing: marketing ?? false,
-          agreement: agreement ?? false,
-        },
-      ]);
-
-      if (error) {
-        console.error("❌ profiles insert 실패:", error.message);
-      } else {
-        console.log("✅ profiles 자동 저장 완료");
-      }
-    };
-
-    syncProfileIfNeeded();
-  }, [user]);
+  }, [user, session, isLoading, location, navigate]);
 
   if (isLoading) {
     return <div className="pt-28 text-center">로딩 중...</div>;

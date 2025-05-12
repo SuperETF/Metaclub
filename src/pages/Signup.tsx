@@ -1,5 +1,3 @@
-// ✅ Signup.tsx - 최종 완성본
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
@@ -103,17 +101,43 @@ const Signup: React.FC = () => {
     if (!isFormValid) return;
 
     try {
+      const { data: nickDup } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("nickname", nickname)
+        .maybeSingle();
+
+      if (nickDup) {
+        toast.error("이미 사용 중인 닉네임입니다.");
+        return;
+      }
+
+      await supabase.from("temp_profiles").upsert({
+        email,
+        name,
+        nickname,
+        phone,
+        marketing,
+        agreement
+      });
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: "https://metaclass.club/login?verified=true",
-          data: { nickname, name, phone, marketing, agreement },
-        },
+          data: {
+            email,
+            name,
+            nickname,
+            phone,
+            marketing,
+            agreement
+          }
+        }
       });
 
       if (error) {
-        console.error("❌ 회원가입 실패:", error);
         toast.error(
           error.message.includes("User already registered")
             ? "이미 등록된 이메일입니다"
