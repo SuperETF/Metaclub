@@ -1,33 +1,25 @@
-import React, { useState, useEffect } from "react";
+// ✅ Login.tsx - 디자인 유지 + 기능 추가 최종본
+
+import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import { toast } from "react-toastify";
-import { getFriendlyError } from "../utils/getFriendlyError";
 import { useUser } from "@supabase/auth-helpers-react";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || "/dashboard";
   const user = useUser();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const [showResetModal, setShowResetModal] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
-  const [resetSent, setResetSent] = useState(false);
-
-  // ✅ 인증 후 리디렉션되었을 때 toast 표시 및 profiles upsert → /dashboard
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const verified = params.get("verified");
+    const verified = new URLSearchParams(location.search).get("verified");
 
-    const processVerifiedUser = async () => {
+    const createProfile = async () => {
       if (verified === "true" && user) {
-        toast.success("✅ 이메일 인증이 완료되었습니다.");
-
         const { data: existing } = await supabase
           .from("profiles")
           .select("id")
@@ -35,8 +27,8 @@ const Login: React.FC = () => {
           .maybeSingle();
 
         if (!existing) {
-          const meta = user.user_metadata;
-          await supabase.from("profiles").upsert({
+          const meta = JSON.parse(sessionStorage.getItem("signup_meta") || "{}");
+          const { error } = await supabase.from("profiles").upsert({
             id: user.id,
             email: user.email,
             name: meta.name ?? "",
@@ -45,54 +37,38 @@ const Login: React.FC = () => {
             marketing: meta.marketing ?? false,
             agreement: meta.agreement ?? false,
           });
+
+          if (error) {
+            toast.error("프로필 생성 실패: " + error.message);
+          } else {
+            sessionStorage.removeItem("signup_meta");
+          }
         }
 
-        // URL 파라미터 정리 후 이동
-        params.delete("verified");
-        navigate("/dashboard", { replace: true });
+        navigate("/dashboard");
       }
     };
 
-    processVerifiedUser();
-  }, [location.search, user, navigate]);
-
-  // ✅ 자동 로그인 상태인 경우 바로 /dashboard 이동
-  useEffect(() => {
-    if (user?.email_confirmed_at) {
-      navigate("/dashboard");
-    }
-  }, [user, navigate]);
+    createProfile();
+  }, [user, location.search, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      toast.error(getFriendlyError(error));
+      toast.error("로그인 실패: " + error.message);
       return;
     }
+
     if (!data.user.email_confirmed_at) {
-      toast.warning("❗ 이메일 인증이 완료되지 않았습니다. 이메일을 확인해주세요.");
+      toast.warning("이메일 인증이 완료되지 않았습니다.");
       await supabase.auth.signOut();
       return;
     }
-    toast.success("로그인 성공!");
-    navigate(from, { replace: true });
-  };
 
-  const handleResetRequest = async () => {
-    if (!resetEmail) {
-      toast.error("이메일을 입력해주세요.");
-      return;
-    }
-    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (error) {
-      toast.error(getFriendlyError(error));
-    } else {
-      setResetSent(true);
-      toast.success("재설정 링크를 이메일로 보냈습니다.");
-    }
+    toast.success("로그인 성공!");
+    navigate("/dashboard");
   };
 
   return (
@@ -138,64 +114,16 @@ const Login: React.FC = () => {
 
         <div className="flex justify-between text-sm text-gray-500 mt-4">
           <button
-            onClick={() => {
-              setShowResetModal(true);
-              setResetEmail("");
-              setResetSent(false);
-            }}
+            onClick={() => navigate("/reset-password")}
+            className="hover:text-indigo-600"
           >
             비밀번호 재설정
           </button>
-          <button onClick={() => navigate("/signup")}>회원가입</button>
+          <button onClick={() => navigate("/signup")} className="hover:text-indigo-600">
+            회원가입
+          </button>
         </div>
       </div>
-
-      {/* Password Reset Modal */}
-      {showResetModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">비밀번호 재설정</h3>
-              <button
-                onClick={() => setShowResetModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-            {!resetSent ? (
-              <>
-                <p className="text-sm text-gray-500 mb-4">
-                  가입하신 이메일 주소를 입력하면 재설정 링크를 보내드립니다.
-                </p>
-                <input
-                  type="email"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
-                  placeholder="이메일을 입력하세요"
-                />
-                <button
-                  onClick={handleResetRequest}
-                  className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-                >
-                  링크 보내기
-                </button>
-              </>
-            ) : (
-              <div className="text-center">
-                <p className="mb-4">{resetEmail}로 링크를 보냈습니다.</p>
-                <button
-                  onClick={() => setShowResetModal(false)}
-                  className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
-                >
-                  확인
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

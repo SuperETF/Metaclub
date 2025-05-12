@@ -1,3 +1,5 @@
+// ✅ Signup.tsx - 최종 완성본
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
@@ -24,7 +26,7 @@ const Signup: React.FC = () => {
 
   const checkEmailExists = async (email: string): Promise<boolean> => {
     setEmailChecking(true);
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("profiles")
       .select("id")
       .eq("email", email)
@@ -32,7 +34,6 @@ const Signup: React.FC = () => {
     setEmailChecking(false);
     return !!data;
   };
-  
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -73,9 +74,8 @@ const Signup: React.FC = () => {
       case "phone": {
         const formatted = value
           .replace(/[^0-9]/g, "")
-          .replace(
-            /^([0-9]{0,3})([0-9]{0,4})([0-9]{0,4})$/,
-            (_, p1, p2, p3) => [p1, p2, p3].filter(Boolean).join("-")
+          .replace(/^([0-9]{0,3})([0-9]{0,4})([0-9]{0,4})$/, (_, p1, p2, p3) =>
+            [p1, p2, p3].filter(Boolean).join("-")
           )
           .substring(0, 13);
         setPhone(formatted);
@@ -101,49 +101,40 @@ const Signup: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid) return;
-  
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: "https://metaclass.club/login?verified=true", // ✅ Supabase 등록 필요
-        data: { nickname, name, phone, marketing, agreement },
-      },
-    });
-    
-  
-    if (error) {
-      toast.error(
-        error.message.includes("User already registered")
-          ? "이미 등록된 이메일입니다"
-          : "회원가입 실패: " + error.message
-      );
-      return;
-    }
-  
-    if (data?.user) {
-      const { error: insertError } = await supabase.from("profiles").upsert({
-        id: data.user.id,
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
         email,
-        name,
-        nickname,
-        phone,
-        marketing: Boolean(marketing),
-        agreement: Boolean(agreement),
+        password,
+        options: {
+          emailRedirectTo: "https://metaclass.club/login?verified=true",
+          data: { nickname, name, phone, marketing, agreement },
+        },
       });
-      
-  
-      if (insertError) {
-        console.error("❌ profiles insert 실패:", insertError.message);
-        toast.error("프로필 insert 실패: " + insertError.message);
+
+      if (error) {
+        console.error("❌ 회원가입 실패:", error);
+        toast.error(
+          error.message.includes("User already registered")
+            ? "이미 등록된 이메일입니다"
+            : "회원가입 실패: " + error.message
+        );
         return;
       }
-  
-      toast.success("회원가입 완료! 이메일을 확인해주세요.");
-      navigate("/login");
+
+      if (data?.user) {
+        sessionStorage.setItem(
+          "signup_meta",
+          JSON.stringify({ nickname, name, phone, marketing, agreement })
+        );
+        toast.success("회원가입 완료! 이메일을 확인해주세요.");
+        navigate("/login");
+      }
+    } catch (err) {
+      console.error("❌ 예외 발생:", err);
+      toast.error("예상치 못한 오류가 발생했습니다.");
     }
   };
-  
 
   return (
     <MobileLayout>
