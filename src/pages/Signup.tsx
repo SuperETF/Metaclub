@@ -96,7 +96,7 @@ const Signup: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid) return;
-
+  
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -105,7 +105,7 @@ const Signup: React.FC = () => {
         data: { nickname, name, phone, marketing, agreement },
       },
     });
-
+  
     if (error) {
       toast.error(
         error.message.includes("User already registered")
@@ -114,10 +114,9 @@ const Signup: React.FC = () => {
       );
       return;
     }
-
-    // ✅ 회원가입 성공 후 profiles 테이블에도 insert
+  
     if (data?.user) {
-      await supabase.from("profiles").insert({
+      const { error: insertError } = await supabase.from("profiles").upsert({
         id: data.user.id,
         email,
         name,
@@ -125,13 +124,20 @@ const Signup: React.FC = () => {
         phone,
         marketing,
         agreement,
-        img: "https://mivnacfecycugbbdwixv.supabase.co/storage/v1/object/public/avatars//profile.png", // ✅ 기본 이미지 등록
+        img: "https://mivnacfecycugbbdwixv.supabase.co/storage/v1/object/public/avatars/profile.png", // ✅ 기본 이미지 URL
       });
+  
+      if (insertError) {
+        console.error("❌ profiles insert 실패:", insertError.message);
+        toast.error("프로필 insert 실패: " + insertError.message);
+        return;
+      }
+  
+      toast.success("회원가입 완료! 이메일을 확인해주세요.");
+      navigate("/login");
     }
-
-    toast.success("회원가입 완료! 이메일을 확인해주세요.");
-    navigate("/login");
   };
+  
 
   return (
     <MobileLayout>
