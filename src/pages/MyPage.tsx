@@ -72,7 +72,6 @@ const MyPage: React.FC = () => {
       .order("created_at", { ascending: false })
       .then(({ data }) => setPosts(data || []));
   }, [user]);
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/dashboard", { replace: true });
@@ -123,7 +122,7 @@ const MyPage: React.FC = () => {
               </p>
               <button
                 onClick={() => navigate("/edit-profile")}
-                className="mt-2 text-xs border border-gray-300 rounded px-2 py-1 text-gray-600 hover:bg-gray-50"
+                className="mt-2 text-sm bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-100 transition"
               >
                 프로필 편집
               </button>
@@ -165,15 +164,14 @@ const MyPage: React.FC = () => {
         </div>
 
         {/* 탈퇴 확인 버튼 */}
-        <div className="mt-6 text-center text-sm text-gray-400">
+        <div className="mt-6 text-center">
           <button
             onClick={confirmAccountDeletion}
-            className="underline hover:text-red-500 transition"
+            className="text-sm text-gray-500 hover:text-red-500 underline"
           >
             회원 탈퇴하기
           </button>
         </div>
-
         {/* 탈퇴 사유 모달 */}
         {showReasonModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
@@ -189,7 +187,7 @@ const MyPage: React.FC = () => {
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setShowReasonModal(false)}
-                  className="bg-gray-200 px-4 py-2 rounded"
+                  className="bg-gray-100 text-gray-700 px-4 py-2 rounded hover:bg-gray-200"
                 >
                   취소
                 </button>
@@ -198,7 +196,7 @@ const MyPage: React.FC = () => {
                     setShowReasonModal(false);
                     requestAccountDeletion();
                   }}
-                  className="bg-red-500 text-white px-4 py-2 rounded"
+                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
                 >
                   탈퇴하기
                 </button>
@@ -210,7 +208,7 @@ const MyPage: React.FC = () => {
         {/* 홈으로 돌아가기 */}
         <button
           onClick={() => navigate("/dashboard")}
-          className="w-full mt-3 py-3 bg-white border border-gray-300 text-gray-700 rounded font-medium hover:bg-gray-50"
+          className="w-full mt-4 py-3 bg-white border border-gray-300 text-gray-800 rounded hover:bg-gray-100 transition font-medium"
         >
           홈으로 돌아가기
         </button>
@@ -218,7 +216,7 @@ const MyPage: React.FC = () => {
         {/* 로그아웃 */}
         <button
           onClick={handleLogout}
-          className="w-full mt-3 py-3 bg-gray-200 text-gray-700 rounded font-medium hover:bg-gray-300"
+          className="w-full mt-3 py-3 bg-gray-100 text-gray-800 rounded hover:bg-gray-200 transition font-medium"
         >
           로그아웃
         </button>

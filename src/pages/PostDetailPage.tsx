@@ -16,6 +16,7 @@ const categoryMap: Record<string, string> = {
   complaint: "문제 오류",
   mind: "오늘도 말해버렸다."
 };
+
 const PostDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const user = useUser();
@@ -164,38 +165,34 @@ const PostDetailPage: React.FC = () => {
 
   const scrollY = window.scrollY;
   const selectedCategory = post?.category ?? "free";
+
   return (
     <>
       <div className="pt-28 pb-20 px-0 md:px-4 md:max-w-screen-md md:mx-auto">
         {post && (
-          <div className="mb-6 bg-white p-4 md:p-5 md:rounded-xl md:shadow">
+          <div className="mb-6 bg-white p-4 md:p-5 md:rounded-xl md:shadow space-y-4">
             {user?.id === post.user_id && (
-              <div className="flex justify-end gap-2 mb-2">
-                <button onClick={handleEditPost} className="text-blue-600 underline text-sm">
-                  수정
-                </button>
-                <button onClick={handleDeletePost} className="text-red-600 underline text-sm">
-                  삭제
-                </button>
+              <div className="flex justify-end gap-2">
+                <button onClick={handleEditPost} className="text-blue-600 underline text-sm">수정</button>
+                <button onClick={handleDeletePost} className="text-red-600 underline text-sm">삭제</button>
               </div>
             )}
 
-            <div className="text-sm text-blue-600 font-medium mb-1">
+            <div className="text-sm text-blue-600 font-medium">
               {categoryMap[post.category] ?? post.category}
             </div>
-            <h1 className="text-2xl font-bold mb-2">{post.title}</h1>
-            <div className="text-sm text-gray-500 mb-3">
+            <h1 className="text-2xl font-bold">{post.title}</h1>
+            <div className="text-sm text-gray-500">
               {post.author} · {formatDate(post.created_at)}
             </div>
 
-            <iframe
-              title="Post Content"
-              className="w-full min-h-[100vh] border-0"
-              srcDoc={DOMPurify.sanitize(post.content)}
-              sandbox=""
+            {/* ✅ 본문 출력: iframe → prose로 교체 */}
+            <div
+              className="prose prose-sm sm:prose lg:prose-lg max-w-none"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
             />
 
-            <div className="flex justify-start gap-4 mt-4 pt-3 border-t border-gray-100 text-sm text-gray-500">
+            <div className="flex justify-start gap-4 pt-3 border-t border-gray-100 text-sm text-gray-500">
               <button
                 onClick={() => handleReaction("like")}
                 className={`flex items-center gap-1 px-3 py-1 rounded font-medium transition ${
@@ -220,7 +217,6 @@ const PostDetailPage: React.FC = () => {
             </div>
           </div>
         )}
-
         <div className="bg-white rounded-none md:rounded-xl md:shadow p-4 md:p-5 mb-8">
           <h2 className="font-semibold mb-3">댓글 {comments.length}</h2>
 

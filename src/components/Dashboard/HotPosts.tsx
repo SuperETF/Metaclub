@@ -6,6 +6,9 @@ interface Post {
   id: string;
   title: string;
   views: number;
+  likes: number;
+  dislikes: number;
+  score: number;
 }
 
 const HotPosts: React.FC = () => {
@@ -15,12 +18,24 @@ const HotPosts: React.FC = () => {
     const fetchHotPosts = async () => {
       const { data, error } = await supabase
         .from("posts")
-        .select("id, title, views")
+        .select("id, title, views, likes, dislikes")
         .order("views", { ascending: false })
-        .limit(10);
+        .limit(50);
 
       if (!error && data) {
-        setPosts(data);
+        const scored = data.map(post => ({
+          ...post,
+          score:
+            (post.views ?? 0) * 1 +
+            (post.likes ?? 0) * 3 -
+            (post.dislikes ?? 0) * 2
+        }));
+
+        const top10 = scored
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 10);
+
+        setPosts(top10);
       } else {
         console.error("🔥 인기글 조회 실패:", error?.message);
       }
@@ -28,7 +43,6 @@ const HotPosts: React.FC = () => {
 
     fetchHotPosts();
   }, []);
-
   const slides = [
     posts.slice(0, 5),   // 1~5위
     posts.slice(5, 10),  // 6~10위
@@ -53,10 +67,10 @@ const HotPosts: React.FC = () => {
               return (
                 <div
                   key={post.id}
-                  className="flex justify-between items-center border-b last:border-none py-2"
+                  className="flex items-center border-b last:border-none py-2"
                 >
-                  <div className="flex items-center gap-2 w-10/12">
-                    <span className={`text-sm font-bold ${rankColor}`}>
+                  <div className="flex items-center gap-2 w-full">
+                    <span className={`min-w-[36px] text-sm font-bold ${rankColor}`}>
                       {rank}위
                     </span>
                     <p
@@ -65,10 +79,6 @@ const HotPosts: React.FC = () => {
                     >
                       {post.title}
                     </p>
-                  </div>
-                  <div className="flex items-center text-gray-400 text-sm">
-                    <i className="far fa-eye mr-1" />
-                    <span>{post.views.toLocaleString()}</span>
                   </div>
                 </div>
               );
