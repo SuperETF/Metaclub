@@ -16,7 +16,6 @@ const categoryMap: Record<string, string> = {
   complaint: "문제 오류",
   mind: "오늘도 말해버렸다."
 };
-
 const PostDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const user = useUser();
@@ -36,8 +35,19 @@ const PostDetailPage: React.FC = () => {
   };
 
   const refreshPost = async () => {
-    const { data } = await supabase.from("posts").select("*").eq("id", id).single();
-    if (data) setPost(data);
+    const { data: postData } = await supabase.from("posts").select("*").eq("id", id).single();
+    if (postData) {
+      const { data: reactions } = await supabase
+        .from("post_reactions")
+        .select("reaction_type")
+        .eq("post_id", id);
+
+      const likes = reactions?.filter(r => r.reaction_type === "like").length || 0;
+      const dislikes = reactions?.filter(r => r.reaction_type === "dislike").length || 0;
+
+      setPost({ ...postData, likes, dislikes });
+    }
+
     if (user) {
       const { data: reaction } = await supabase
         .from("post_reactions")
@@ -81,7 +91,6 @@ const PostDetailPage: React.FC = () => {
       await loadComments();
     })();
   }, [id, user]);
-
   const handleReaction = async (type: "like" | "dislike") => {
     if (!user) return toast.warn("로그인이 필요합니다.");
     if (!post) return;
@@ -155,12 +164,11 @@ const PostDetailPage: React.FC = () => {
 
   const scrollY = window.scrollY;
   const selectedCategory = post?.category ?? "free";
-
   return (
     <>
-      <div className="pt-28 pb-20 px-4 max-w-screen-md mx-auto">
+      <div className="pt-28 pb-20 px-0 md:px-4 md:max-w-screen-md md:mx-auto">
         {post && (
-          <div className="mb-6 bg-white p-5 rounded-xl shadow">
+          <div className="mb-6 bg-white p-4 md:p-5 md:rounded-xl md:shadow">
             {user?.id === post.user_id && (
               <div className="flex justify-end gap-2 mb-2">
                 <button onClick={handleEditPost} className="text-blue-600 underline text-sm">
@@ -180,13 +188,12 @@ const PostDetailPage: React.FC = () => {
               {post.author} · {formatDate(post.created_at)}
             </div>
 
-            {/* ✅ iframe으로 HTML 전체 렌더링 */}
             <iframe
-  title="Post Content"
-  className="w-full min-h-[100vh] border-0"
-  srcDoc={DOMPurify.sanitize(post.content)}
-  sandbox=""
-/>
+              title="Post Content"
+              className="w-full min-h-[100vh] border-0"
+              srcDoc={DOMPurify.sanitize(post.content)}
+              sandbox=""
+            />
 
             <div className="flex justify-start gap-4 mt-4 pt-3 border-t border-gray-100 text-sm text-gray-500">
               <button
@@ -214,7 +221,7 @@ const PostDetailPage: React.FC = () => {
           </div>
         )}
 
-        <div className="bg-white rounded-xl shadow p-5 mb-8">
+        <div className="bg-white rounded-none md:rounded-xl md:shadow p-4 md:p-5 mb-8">
           <h2 className="font-semibold mb-3">댓글 {comments.length}</h2>
 
           {user ? (
