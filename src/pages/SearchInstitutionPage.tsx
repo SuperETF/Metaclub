@@ -130,6 +130,22 @@ const SearchInstitutionPage: React.FC = () => {
             <i className="fas fa-chevron-right text-gray-400 ml-2" />
           </a>
         ))}
+
+        {/* 하단 안내 문구 */}
+        <p className="text-xs text-gray-400 text-center mt-10 px-4 leading-relaxed max-w-md mx-auto">
+  모든 로고 및 이미지는 각 기관의 공식 사이트 또는 오픈된 정보를 바탕으로 구성되었으며, 문제가 있을 경우
+  <a
+    href="https://tally.so/r/wMgxJE"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="underline text-blue-500 mx-1"
+  >
+    신고 및 요청 폼
+  </a>
+  을 통해 알려주시면 정중히 검토 후 신속히 조치하겠습니다.
+</p>
+
+
       </div>
     </PageLayout>
   );
