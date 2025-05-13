@@ -10,9 +10,13 @@ const categories = [
   { label: "전체", value: "all" },
   { label: "무료 강의", value: "free" },
   { label: "웨이트 트레이닝", value: "weight" },
-  { label: "재활 트레이닝", value: "rehab" },
+  { label: "스트렝스", value: "stg" },
   { label: "필라테스", value: "pila" },
-  { label: "운동지도", value: "guide" },
+  { label: "마인드셋 및 상담", value: "mind" },
+  { label: "척추측만증", value: "scoliosis" },
+  { label: "물리치료사", value: "physio" },
+  { label: "체형 교정", value: "posture" },
+  { label: "통증 조절", value: "pain" },
 ];
 
 const EducationTabs: React.FC<Props> = ({ selected, onChange }) => {
