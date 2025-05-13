@@ -26,17 +26,32 @@ const PostList: React.FC<Props> = ({ category }) => {
 
   useEffect(() => {
     const fetchPosts = async () => {
-      const query = supabase
+      const { data: rawPosts, error } = await supabase
         .from("posts")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (category !== "all") {
-        query.eq("category", category);
-      }
+      if (error || !rawPosts) return;
 
-      const { data, error } = await query;
-      if (!error && data) setPosts(data);
+      const filteredPosts = category === "all"
+        ? rawPosts
+        : rawPosts.filter((p) => p.category === category);
+
+      const postsWithReactions = await Promise.all(
+        filteredPosts.map(async (post) => {
+          const { data: reactions } = await supabase
+            .from("post_reactions")
+            .select("reaction_type")
+            .eq("post_id", post.id);
+
+          const likes = reactions?.filter((r) => r.reaction_type === "like").length ?? 0;
+          const dislikes = reactions?.filter((r) => r.reaction_type === "dislike").length ?? 0;
+
+          return { ...post, likes, dislikes };
+        })
+      );
+
+      setPosts(postsWithReactions);
     };
 
     fetchPosts();
