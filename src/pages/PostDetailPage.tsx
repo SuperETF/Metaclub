@@ -13,7 +13,8 @@ const categoryMap: Record<string, string> = {
   free: "자유게시판",
   question: "문의게시판",
   info: "정보게시판",
-  complaint: "문제 오류"
+  complaint: "문제 오류",
+  mind: "오늘도 말해버렸다."
 };
 
 const PostDetailPage: React.FC = () => {

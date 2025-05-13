@@ -11,6 +11,7 @@ const categories = [
   { label: "문의게시판", value: "question" },
   { label: "정보게시판", value: "info" },
   { label: "문제 오류", value: "Complaint" },
+  { label: "오늘도 말해버렸다.", value: "mind" },
 ];
 
 const CategoryTabs: React.FC<Props> = ({ selected, onChange }) => {
