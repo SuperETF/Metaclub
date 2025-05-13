@@ -17,6 +17,7 @@ import Header from "../components/Dashboard/Header";
 import EducationWrite from "../pages/EducationWrite";
 import ResetPassword from "../pages/ResetPassword";
 import RequireAuth from "./RequireAuth";
+import SearchInstitutionPage from "../pages/SearchInstitutionPage";
 
 const LayoutWithTabs = () => (
   <>
@@ -41,6 +42,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/quiz/:id" element={<QuizStart />} />
         <Route path="/quiz-result/:resultId" element={<QuizResult />} />
         <Route path="/post/:id" element={<PostDetailPage />} />
+        <Route path="/search" element={<SearchInstitutionPage />} />
       </Route>
 
       {/* ✅ 보호 라우트 그룹 (Layout + 인증 필요) */}
