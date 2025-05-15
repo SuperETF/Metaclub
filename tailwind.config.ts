@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss';
 import scrollbar from 'tailwind-scrollbar';
 import lineClamp from '@tailwindcss/line-clamp';
+import scrollbarHide from 'tailwind-scrollbar-hide'; // ✅ 추가
 
 const config: Config = {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
@@ -18,6 +19,7 @@ const config: Config = {
   plugins: [
     scrollbar,
     lineClamp,
+    scrollbarHide, // ✅ 등록
   ],
 };
 
