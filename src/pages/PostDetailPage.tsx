@@ -46,7 +46,7 @@ const PostDetailPage: React.FC = () => {
       const likes = reactions?.filter(r => r.reaction_type === "like").length || 0;
       const dislikes = reactions?.filter(r => r.reaction_type === "dislike").length || 0;
 
-      setPost({ ...postData, likes, dislikes });
+      setPost({ ...postData, views: postData.views, likes, dislikes });
     }
 
     if (user) {
@@ -72,26 +72,34 @@ const PostDetailPage: React.FC = () => {
   useEffect(() => {
     if (hasTrackedView.current) return;
     hasTrackedView.current = true;
+  
     (async () => {
-      let anonId = user?.id ?? null;
-      if (!user) {
-        anonId = localStorage.getItem("anon_id") || crypto.randomUUID();
-        localStorage.setItem("anon_id", anonId);
-      }
-
-      const { error: viewError } = await supabase.from("post_views").insert({
+      const userId = user?.id ?? null;
+      const localAnonId = localStorage.getItem("anon_id");
+      const anonId = localAnonId || crypto.randomUUID();
+      if (!localAnonId) localStorage.setItem("anon_id", anonId);
+  
+      const { error } = await supabase.from("post_views").insert({
         post_id: id,
-        user_id: user?.id ?? null,
-        anonymous_id: anonId,
+        user_id: userId,
+        anonymous_id: userId ? null : anonId,
+        viewed_at: new Date(),
       });
-      if (viewError && viewError.code !== "23505" && viewError.code !== "409") {
-        console.error("조회수 등록 실패:", viewError.message);
+  
+      if (error) {
+        console.error("📛 조회수 등록 실패:", error.message);
       }
-
-      await refreshPost();
+  
+      // ✅ insert 완료 후, 100ms 후 강제 refreshPost()
+      setTimeout(async () => {
+        await refreshPost();
+      }, 150);
+  
       await loadComments();
     })();
-  }, [id, user]);
+  }, [id]);
+   // ✅ user 제거 (중복 실행 방지)
+  
   const handleReaction = async (type: "like" | "dislike") => {
     if (!user) return toast.warn("로그인이 필요합니다.");
     if (!post) return;

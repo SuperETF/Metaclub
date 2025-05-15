@@ -1,5 +1,5 @@
 import type { Config } from 'tailwindcss';
-import scrollbarHide from 'tailwind-scrollbar-hide';
+import scrollbar from 'tailwind-scrollbar';
 import lineClamp from '@tailwindcss/line-clamp';
 
 const config: Config = {
@@ -16,9 +16,8 @@ const config: Config = {
     },
   },
   plugins: [
-    scrollbarHide,
+    scrollbar,
     lineClamp,
-    
   ],
 };
 

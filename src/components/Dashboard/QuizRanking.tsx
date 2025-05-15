@@ -30,7 +30,7 @@ const QuizRanking: React.FC = () => {
         .select("user_id, score, grade")
         .eq("quiz_id", category)
         .order("score", { ascending: false })
-        .limit(10);
+        .limit(30);
 
       if (error || !quizData) {
         console.error("퀴즈 랭킹 조회 실패:", error?.message);
@@ -39,7 +39,6 @@ const QuizRanking: React.FC = () => {
 
       const userIds = [...new Set(quizData.map((r) => r.user_id).filter(Boolean))];
 
-      // ✅ public_profile_nicknames 뷰 사용
       const { data: profiles } = await supabase
         .from("public_profile_nicknames")
         .select("id, nickname, profile_img")
@@ -63,7 +62,6 @@ const QuizRanking: React.FC = () => {
         profileImg: profileMap.get(row.user_id)?.profileImg ?? "/default-profile.png",
       }));
 
-      // 내 랭킹이 없으면 별도 추가
       if (myId && !combined.find((r) => r.userId === myId)) {
         const { data: myResult } = await supabase
           .from("quiz_rankings")
@@ -135,7 +133,7 @@ const QuizRanking: React.FC = () => {
         </button>
       </div>
 
-      <div ref={listRef} className="space-y-2 max-h-[400px] overflow-y-auto">
+      <div ref={listRef} className="space-y-2 max-h-[320px] overflow-y-auto scrollbar-thin scrollbar-thumb-transparent scrollbar-track-transparent">
         {rankings.map((u, idx) => {
           const rank = idx + 1;
           const isMine = u.userId === myId;
