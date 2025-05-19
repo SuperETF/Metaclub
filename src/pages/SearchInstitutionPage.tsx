@@ -26,6 +26,7 @@ const SearchInstitutionPage: React.FC = () => {
     "물리치료사",
     "척추측만증",
     "재활운동", // ✅ 추가됨
+    "해부학",
     "국가 기관",
   ];
 
