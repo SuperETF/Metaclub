@@ -86,13 +86,17 @@ const QuizStart: React.FC = () => {
   };
 
   const saveQuizResult = async (status: "completed" | "aborted") => {
-    if (!user || !quizId) return null;
-
+    const uid = user?.id;
+    if (!uid || !quizId) {
+      toast.error("유저 인증 정보가 올바르지 않습니다.");
+      return null;
+    }
+  
     const result = await supabase
       .from("quiz_results")
       .insert([
         {
-          user_uuid: user.id, // ✅ uuid 기반 저장
+          user_uuid: uid,
           quiz_id: quizId,
           score: correctCount,
           total: questions.length,
@@ -103,7 +107,11 @@ const QuizStart: React.FC = () => {
       .select()
       .single();
 
-    if (result.error || !result.data?.id) return null;
+    if (result.error || !result.data?.id) {
+      toast.error("결과 저장에 실패했습니다.");
+      console.error("❌ Supabase error:", result.error);
+      return null;
+    }
 
     const items = userAnswers.map((ua) => ({
       result_id: result.data.id,
@@ -114,7 +122,15 @@ const QuizStart: React.FC = () => {
       is_correct: ua.isCorrect,
     }));
 
-    await supabase.from("quiz_result_items").insert(items);
+    const { error: itemError } = await supabase
+      .from("quiz_result_items")
+      .insert(items);
+
+    if (itemError) {
+      console.error("❌ quiz_result_items insert error:", itemError);
+      toast.error("문제별 결과 저장 실패");
+    }
+
     return result.data.id;
   };
 
@@ -123,20 +139,11 @@ const QuizStart: React.FC = () => {
   };
 
   const handleFinish = async () => {
-    if (!user) {
-      toast.info("비회원은 기록이 저장되지 않습니다.");
-      return navigate("/dashboard");
-    }
     const id = await saveQuizResult("completed");
     if (id) navigate(`/quiz-result/${id}`);
-    else toast.error("결과 저장에 실패했습니다.");
   };
 
   const handleQuit = async () => {
-    if (!user) {
-      toast.info("비회원은 기록이 저장되지 않습니다.");
-      return navigate("/dashboard");
-    }
     const id = await saveQuizResult("aborted");
     if (id) navigate(`/quiz-result/${id}`);
   };
