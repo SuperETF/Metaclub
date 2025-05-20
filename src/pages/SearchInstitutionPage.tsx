@@ -27,6 +27,7 @@ const SearchInstitutionPage: React.FC = () => {
     "척추측만증",
     "재활운동", // ✅ 추가됨
     "해부학",
+    "컨디셔닝",
     "국가 기관",
   ];
 

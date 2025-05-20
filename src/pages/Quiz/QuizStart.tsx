@@ -28,7 +28,6 @@ const QuizStart: React.FC = () => {
     { questionId: string; selected: number; isCorrect: boolean }[]
   >([]);
 
-  // ✅ 배열 셔플 함수
   const shuffleArray = <T,>(array: T[]): T[] =>
     [...array].sort(() => Math.random() - 0.5);
 
@@ -88,11 +87,12 @@ const QuizStart: React.FC = () => {
 
   const saveQuizResult = async (status: "completed" | "aborted") => {
     if (!user || !quizId) return null;
+
     const result = await supabase
       .from("quiz_results")
       .insert([
         {
-          user_id: user.id,
+          user_uuid: user.id, // ✅ uuid 기반 저장
           quiz_id: quizId,
           score: correctCount,
           total: questions.length,
@@ -102,6 +102,7 @@ const QuizStart: React.FC = () => {
       ])
       .select()
       .single();
+
     if (result.error || !result.data?.id) return null;
 
     const items = userAnswers.map((ua) => ({
@@ -112,6 +113,7 @@ const QuizStart: React.FC = () => {
         "",
       is_correct: ua.isCorrect,
     }));
+
     await supabase.from("quiz_result_items").insert(items);
     return result.data.id;
   };
