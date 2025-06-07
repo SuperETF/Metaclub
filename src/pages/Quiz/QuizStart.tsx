@@ -96,7 +96,7 @@ const QuizStart: React.FC = () => {
       .from("quiz_results")
       .insert([
         {
-          user_uuid: uid,
+          user_id: uid, // ✅ 변경된 핵심 필드명
           quiz_id: quizId,
           score: correctCount,
           total: questions.length,
@@ -106,34 +106,33 @@ const QuizStart: React.FC = () => {
       ])
       .select()
       .single();
-
+  
     if (result.error || !result.data?.id) {
       toast.error("결과 저장에 실패했습니다.");
       console.error("❌ Supabase error:", result.error);
       return null;
     }
-
+  
     const items = userAnswers.map((ua) => ({
       result_id: result.data.id,
       question_id: ua.questionId,
       user_answer:
-        questions.find((q) => q.id === ua.questionId)?.options[ua.selected] ||
-        "",
+        questions.find((q) => q.id === ua.questionId)?.options[ua.selected] || "",
       is_correct: ua.isCorrect,
     }));
-
+  
     const { error: itemError } = await supabase
       .from("quiz_result_items")
       .insert(items);
-
+  
     if (itemError) {
       console.error("❌ quiz_result_items insert error:", itemError);
       toast.error("문제별 결과 저장 실패");
     }
-
+  
     return result.data.id;
   };
-
+  
   const handleNext = () => {
     setCurrentIndex((i) => i + 1);
   };

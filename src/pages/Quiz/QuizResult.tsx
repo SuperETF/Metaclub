@@ -1,11 +1,10 @@
-// src/pages/QuizResult.tsx
+// ✅ 기존 디자인 유지 + 카테고리별 필터 + 하단 여백 보정
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import ResponsiveContainer from "../../layouts/ResponsiveContainer";
 
 interface QuizResultItem {
-  question_id: string;
   user_answer: string;
   is_correct: boolean;
   question: {
@@ -19,11 +18,12 @@ interface QuizResultItem {
 interface QuizResultData {
   id: string;
   quiz_id: string;
+  user_id: string;
   score: number;
   total: number;
   grade?: string;
   created_at: string;
-  quiz_result_items?: QuizResultItem[];
+  quiz_result_items: QuizResultItem[];
 }
 
 const quizCategories = [
@@ -33,15 +33,72 @@ const quizCategories = [
 ];
 
 const QuizResult: React.FC = () => {
-  const { resultId } = useParams<{ resultId: string }>();
   const navigate = useNavigate();
   const [result, setResult] = useState<QuizResultData | null>(null);
-  const [showExplanation, setShowExplanation] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>(() => {
     return localStorage.getItem("selected_quiz_category") || "basic";
   });
   const [loading, setLoading] = useState<boolean>(false);
+  const [showExplanation, setShowExplanation] = useState(false);
 
+  const fetchLatestResult = async () => {
+    setLoading(true);
+    const { data: session } = await supabase.auth.getUser();
+    const user = session?.user;
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("quiz_results")
+      .select(`
+        id,
+        quiz_id,
+        user_id,
+        score,
+        total,
+        grade,
+        created_at,
+        quiz_result_items (
+          user_answer,
+          is_correct,
+          question:questions (
+            question,
+            options,
+            correct_answer,
+            explanation
+          )
+        )
+      `)
+      .eq("quiz_id", selectedCategory)
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("❌ 결과 불러오기 실패:", error);
+      setLoading(false);
+      return;
+    }
+
+    if (!data) {
+      setResult(null);
+      setLoading(false);
+      return;
+    }
+    
+    setResult(data as unknown as QuizResultData); // ✅ 타입 단언 추가
+    setLoading(false);
+
+  };
+
+  useEffect(() => {
+    fetchLatestResult();
+  }, [selectedCategory]);
+
+  if (loading) return <div className="pt-32 text-center text-gray-500">결과를 불러오는 중입니다...</div>;
+  if (!result) return <div className="pt-32 text-center text-gray-500">해당 카테고리 결과가 없습니다.</div>;
+
+  const percent = Math.round((result.score / result.total) * 100);
   const getGradeAndFeedback = (percent: number) => {
     if (percent >= 90) return { grade: "S", feedback: "최상위 5%! 멋집니다 👏" };
     if (percent >= 80) return { grade: "A", feedback: "상위권입니다! 잘하셨어요 💪" };
@@ -49,105 +106,10 @@ const QuizResult: React.FC = () => {
     if (percent >= 60) return { grade: "C", feedback: "무난한 점수예요. 조금 더!" };
     return { grade: "D", feedback: "조금 아쉽네요! 다시 도전해요 🔥" };
   };
-
-  const fetchResult = async (byId?: string, byCategory?: string) => {
-    setLoading(true);
-    let raw: any, error: any;
-
-    if (byId) {
-      ({ data: raw, error } = await supabase
-        .from("quiz_results")
-        .select(`
-          id,
-          quiz_id,
-          score,
-          total,
-          grade,
-          created_at,
-          quiz_result_items (
-            user_answer,
-            is_correct,
-            question:questions (
-              question,
-              options,
-              correct_answer,
-              explanation
-            )
-          )
-        `)
-        .eq("id", byId)
-        .maybeSingle());
-    } else if (byCategory) {
-      ({ data: raw, error } = await supabase
-        .from("quiz_results")
-        .select(`
-          id,
-          quiz_id,
-          score,
-          total,
-          grade,
-          created_at,
-          quiz_result_items (
-            user_answer,
-            is_correct,
-            question:questions (
-              question,
-              options,
-              correct_answer,
-              explanation
-            )
-          )
-        `)
-        .eq("quiz_id", byCategory)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle());
-    } else {
-      setLoading(false);
-      return;
-    }
-
-    if (error) {
-      console.error("❌ 결과 불러오기 실패:", error.message);
-      setLoading(false);
-      return;
-    }
-
-    const data = raw as QuizResultData | null;
-    if (!data) {
-      console.warn("⚠️ 결과 없음");
-      setResult(null);
-      setLoading(false);
-      return;
-    }
-
-    setResult(data);
-    localStorage.setItem("selected_quiz_category", data.quiz_id);
-    setLoading(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    if (resultId) fetchResult(resultId);
-  }, [resultId]);
-
-  useEffect(() => {
-    if (!resultId) fetchResult(undefined, selectedCategory);
-  }, [selectedCategory]);
-
-  if (loading || !result || !result.quiz_result_items) {
-    return (
-      <div className="pt-32 text-center text-gray-500">
-        결과를 불러오는 중입니다...
-      </div>
-    );
-  }
-
-  const percent = Math.round((result.score / result.total) * 100);
   const { grade, feedback } = getGradeAndFeedback(percent);
 
   return (
-    <div className="pt-24 pb-[200px] bg-gray-50 min-h-screen">
+    <div className="pt-24 pb-52 bg-gray-50 min-h-screen">
       <ResponsiveContainer>
         <h1 className="text-2xl font-bold mb-4 text-center">퀴즈 결과</h1>
 
@@ -175,9 +137,7 @@ const QuizResult: React.FC = () => {
               <div key={idx} className="border-b pb-3 last:border-none">
                 <div className="flex justify-between items-center mb-1">
                   <span className="font-medium text-gray-800">문제 {idx + 1}</span>
-                  <span
-                    className={`text-sm font-semibold ${item.is_correct ? "text-green-600" : "text-red-600"}`}
-                  >
+                  <span className={`text-sm font-semibold ${item.is_correct ? "text-green-600" : "text-red-600"}`}>
                     {item.is_correct ? "정답" : "오답"}
                   </span>
                 </div>
@@ -203,50 +163,47 @@ const QuizResult: React.FC = () => {
             ))}
           </div>
         </div>
-      </ResponsiveContainer>
 
-      <div className="fixed bottom-0 left-0 w-full bg-white border-t p-4 z-20">
-        <div className="max-w-screen-md mx-auto px-4 space-y-3">
-          <select
-            value={selectedCategory}
-            onChange={(e) => {
-              const value = e.target.value;
-              setSelectedCategory(value);
-              localStorage.setItem("selected_quiz_category", value);
-            }}
-            className="w-full px-4 py-3 bg-gray-100 rounded-md"
-          >
-            {quizCategories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name} 퀴즈
-              </option>
-            ))}
-          </select>
-
-          <button
-            onClick={() => navigate(`/quiz/${selectedCategory}`)}
-            className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold"
-          >
-            다시 풀기
-          </button>
-
-          <button
-            onClick={() => setShowExplanation((prev) => !prev)}
-            className="w-full py-3 border border-blue-600 text-blue-600 rounded-lg font-semibold"
-          >
-            {showExplanation ? "해설 숨기기" : "정답 해설 보기"}
-          </button>
-
-          <div className="text-center">
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="text-gray-500 text-sm hover:text-blue-600"
+        <div className="fixed bottom-0 left-0 w-full bg-white border-t p-4 z-20">
+          <div className="max-w-screen-md mx-auto px-4 space-y-3">
+            <select
+              value={selectedCategory}
+              onChange={(e) => {
+                setSelectedCategory(e.target.value);
+                localStorage.setItem("selected_quiz_category", e.target.value);
+              }}
+              className="w-full px-4 py-3 bg-gray-100 rounded-md"
             >
-              대시보드로 이동
+              {quizCategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>{cat.name} 퀴즈</option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => navigate(`/quiz/${selectedCategory}`)}
+              className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold"
+            >
+              다시 풀기
             </button>
+
+            <button
+              onClick={() => setShowExplanation((prev) => !prev)}
+              className="w-full py-3 border border-blue-600 text-blue-600 rounded-lg font-semibold"
+            >
+              {showExplanation ? "해설 숨기기" : "정답 해설 보기"}
+            </button>
+
+            <div className="text-center">
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="text-gray-500 text-sm hover:text-blue-600"
+              >
+                대시보드로 이동
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </ResponsiveContainer>
     </div>
   );
 };
