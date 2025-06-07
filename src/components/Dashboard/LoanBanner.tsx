@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabaseClient";
 
 interface BannerItem {
   title: string;
@@ -8,33 +9,39 @@ interface BannerItem {
   bgColorClass: string;
 }
 
-const banners: BannerItem[] = [
-  {
-    title: "메-클에 오신 것을 환영합니다 🎉",
-    description: "10% 더 높은 경쟁력을 갖추기 위한\n자료 공유 커뮤니티입니다.",
-    imageUrl: "https://mivnacfecycugbbdwixv.supabase.co/storage/v1/object/sign/benner/B1.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zYmRjZDUyOC01OTUwLTQ3YzQtYmQ5ZC05MDQ5ODI3Y2U3ZDciLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJiZW5uZXIvQjEucG5nIiwiaWF0IjoxNzQ2Njk5ODA4LCJleHAiOjE3NDkyOTE4MDh9.OKVGsMqsR13BjU6Z8xavOz7xTEUaOY-HyF2Ii7Y9VcY",      // ← 앞에 슬래시 필수
-    linkUrl: "https://metaclass.club/dashboard",
-    bgColorClass: "from-indigo-50 to-indigo-100",
-  },
-  {
-    title: "누군가에겐 큰 인사이트가 됩니다🍀",
-    description: "평범해 보여도 누군가에겐\n큰 배움의 기회가 될 수 있어요 😌",
-    imageUrl: "https://mivnacfecycugbbdwixv.supabase.co/storage/v1/object/sign/benner/B2.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zYmRjZDUyOC01OTUwLTQ3YzQtYmQ5ZC05MDQ5ODI3Y2U3ZDciLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJiZW5uZXIvQjIucG5nIiwiaWF0IjoxNzQ2NzAwNTgzLCJleHAiOjE3NDkyOTI1ODN9.6Sv6sZ_HGSXEv7ie3ReBKmWjHVqNiyUfpTndWbwpmlc",      // ← 앞에 슬래시 필수
-    linkUrl: "https://metaclass.club/dashboard",
-    bgColorClass: "from-indigo-50 to-indigo-100",
-  },
-  {
-    title: "지금 기초해부학에 도전해보세요 👍",
-    description: "당신의 기초 지식 능력은 몇 점일까요?",
-    imageUrl: "https://mivnacfecycugbbdwixv.supabase.co/storage/v1/object/sign/benner/B3.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zYmRjZDUyOC01OTUwLTQ3YzQtYmQ5ZC05MDQ5ODI3Y2U3ZDciLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJiZW5uZXIvQjMucG5nIiwiaWF0IjoxNzQ2NzAwNTkyLCJleHAiOjE3NDkyOTI1OTJ9.yMrmeRtZs0NLOs0d0Aou7390ow1vANL1E2v3nJLmD6w",      // ← 앞에 슬래시 필수
-    linkUrl: "https://metaclass.club/dashboard",
-    bgColorClass: "from-indigo-50 to-indigo-100",
-  },
-];
-
 const LoanBanner: React.FC = () => {
+  const [banners, setBanners] = useState<BannerItem[]>([]);
   const [index, setIndex] = useState(0);
   const [fade, setFade] = useState(true);
+
+  useEffect(() => {
+    const fetchBanners = async () => {
+      const { data, error } = await supabase
+        .from("ads")
+        .select("title, description, image_url, link_url, bg_color_class")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("❌ 광고 데이터 불러오기 실패:", error);
+        return;
+      }
+
+      if (data) {
+        const mapped = data.map((ad) => ({
+          title: ad.title,
+          description: ad.description,
+          imageUrl: ad.image_url,
+          linkUrl: ad.link_url,
+          bgColorClass: ad.bg_color_class,
+        }));
+
+        setBanners(mapped);
+      }
+    };
+
+    fetchBanners();
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -46,9 +53,13 @@ const LoanBanner: React.FC = () => {
     }, 4000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [banners]);
 
   const current = banners[index];
+  if (!current) return null;
+
+  // 🔍 디버깅용 로그
+  console.log("🔥 현재 배너 이미지 URL:", current.imageUrl);
 
   return (
     <div className="overflow-hidden">
@@ -74,9 +85,11 @@ const LoanBanner: React.FC = () => {
         <img
           src={current.imageUrl}
           alt="배너 이미지"
-          className="w-20 h-20 object-contain flex-shrink-0"
+          className="w-20 h-20 object-contain flex-shrink-0 border border-gray-200"
           onError={(e) => {
-            e.currentTarget.style.display = "none";
+            console.warn("❌ 이미지 로딩 실패:", current.imageUrl);
+            e.currentTarget.src = "/fallback-banner.png"; // 필요한 경우 대체 이미지
+            e.currentTarget.classList.add("border-red-500");
           }}
         />
       </a>

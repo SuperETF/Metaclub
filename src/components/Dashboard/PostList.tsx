@@ -74,15 +74,28 @@ const PostList: React.FC<Props> = ({ category }) => {
   const stripHtml = (html: string) => {
     const decoded = decodeHtmlEntities(html);
     return decoded
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')         // style 태그 제거
-      .replace(/<img[^>]*alt=".*?"[^>]*>/gi, '')              // img 태그 제거 (alt 포함)
-      .replace(/<[^>]+>/g, '')                                // 모든 HTML 태그 제거
-      .replace(/\n/g, ' ')                                    // 줄바꿈 제거
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<img[^>]*alt=".*?"[^>]*>/gi, '')
+      .replace(/<[^>]+>/g, '')
+      .replace(/\n/g, ' ')
       .trim();
   };
 
   return (
     <div className="bg-gray-50 space-y-2">
+
+      {/* 🔹 칼럼 작가 신청하기 - 회색 텍스트 링크 */}
+      <div className="flex justify-center mt-3">
+  <a
+    href="https://tally.so/r/nGjx6L" // ← 신청 링크로 교체
+    target="_blank"
+    rel="noopener noreferrer"
+    className="w-full max-w-md text-center bg-gray-100 text-gray-600 text-sm py-2 rounded-md hover:bg-gray-200 transition"
+  >
+    ✍️ 칼럼 작가 신청하기
+  </a>
+</div>
+      {/* 📰 게시글 목록 */}
       {posts.map((post) => (
         <div
           key={post.id}
