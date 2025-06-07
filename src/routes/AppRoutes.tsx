@@ -1,4 +1,5 @@
-// ✅ src/routes/AppRoutes.tsx (Dashboard를 공개 페이지로 변경)
+// ✅ src/routes/AppRoutes.tsx
+
 import React from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import ResponsiveContainer from "../layouts/ResponsiveContainer";
@@ -18,6 +19,11 @@ import EducationWrite from "../pages/EducationWrite";
 import ResetPassword from "../pages/ResetPassword";
 import RequireAuth from "./RequireAuth";
 import SearchInstitutionPage from "../pages/SearchInstitutionPage";
+
+// ✅ 생체 2급 시험 관련 페이지 import
+import LF2ExamStart from "../pages/ExamSystems/LifeFitnessLevel2/ExamStart";
+import LF2ExamMain from "../pages/ExamSystems/LifeFitnessLevel2/ExamMain";
+import LF2ExamResult from "../pages/ExamSystems/LifeFitnessLevel2/ExamResult";
 
 const LayoutWithTabs = () => (
   <>
@@ -43,6 +49,11 @@ const AppRoutes: React.FC = () => {
         <Route path="/quiz-result/:resultId" element={<QuizResult />} />
         <Route path="/post/:id" element={<PostDetailPage />} />
         <Route path="/search" element={<SearchInstitutionPage />} />
+
+        {/* ✅ 생체 2급 시험 경로 */}
+        <Route path="/exam/:examType/start" element={<LF2ExamStart />} />
+        <Route path="/exam/:examType/main" element={<LF2ExamMain />} />
+        <Route path="/exam/:examType/result" element={<LF2ExamResult />} />
       </Route>
 
       {/* ✅ 보호 라우트 그룹 (Layout + 인증 필요) */}

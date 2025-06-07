@@ -86,24 +86,29 @@ const SubjectButtons: React.FC = () => {
         className="flex gap-4 overflow-x-auto scroll-smooth touch-pan-x scrollbar-hide cursor-grab select-none snap-x snap-mandatory pr-10"
       >
         {buttons.map((btn, idx) => (
-          <button
-            key={idx}
-            onClick={() => navigate(`/quiz/${btn.quizId}`)}
-            className="bg-white rounded-lg p-3 h-[120px] flex-shrink-0 flex flex-col items-center justify-center shadow-sm hover:shadow-md transition-shadow cursor-pointer snap-start w-[calc(100vw/3.3)] sm:w-[200px]"
-          >
-            <div
-              className={`flex items-center justify-center ${btn.iconBg} w-9 h-9 rounded-full mb-1.5`}
-            >
-              {btn.icon}
-            </div>
-            <p className="text-[10px] text-gray-500 text-center truncate w-full">
-              {btn.description}
-            </p>
-            <p className="text-xs font-medium text-center truncate w-full">
-              {btn.title}
-            </p>
-          </button>
-        ))}
+  <button
+    key={idx}
+    onClick={() =>
+      btn.quizId === "expert"
+        ? navigate("/exam/lf2/start")
+        : navigate(`/quiz/${btn.quizId}`)
+    }
+    className="bg-white rounded-lg p-3 h-[120px] flex-shrink-0 flex flex-col items-center justify-center shadow-sm hover:shadow-md transition-shadow cursor-pointer snap-start w-[calc(100vw/3.3)] sm:w-[200px]"
+  >
+    <div
+      className={`flex items-center justify-center ${btn.iconBg} w-9 h-9 rounded-full mb-1.5`}
+    >
+      {btn.icon}
+    </div>
+    <p className="text-[10px] text-gray-500 text-center truncate w-full">
+      {btn.description}
+    </p>
+    <p className="text-xs font-medium text-center truncate w-full">
+      {btn.title}
+    </p>
+  </button>
+))}
+
       </div>
     </div>
   );
