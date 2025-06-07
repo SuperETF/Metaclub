@@ -15,13 +15,18 @@ const EditProfile: React.FC = () => {
   const [bio, setBio] = useState("");
   const [img, setImg] = useState<string | null>(null);
   const [selectedAvatarUrl, setSelectedAvatarUrl] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const AVATAR_URL = "https://mivnacfecycugbbdwixv.supabase.co/storage/v1/object/public/avatars//profile.png";
+  const AVATAR_BUCKET_URL =
+    "https://mivnacfecycugbbdwixv.supabase.co/storage/v1/object/public/avatars/";
+
+  // ✅ 1~39번 아바타 자동 생성
+  const avatarList = Array.from({ length: 39 }, (_, i) => `${AVATAR_BUCKET_URL}avatar${i + 1}.png`);
 
   useEffect(() => {
     const fetchProfile = async () => {
       if (!session?.user) return;
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("profiles")
         .select("name, nickname, phone, bio, img")
         .eq("id", session.user.id)
@@ -33,6 +38,7 @@ const EditProfile: React.FC = () => {
         setPhone(data.phone || "");
         setBio(data.bio || "");
         setImg(data.img || null);
+        setSelectedAvatarUrl(data.img || null);
       }
     };
 
@@ -41,23 +47,33 @@ const EditProfile: React.FC = () => {
 
   const handleSave = async () => {
     if (!session?.user) return;
+    const profileImg = selectedAvatarUrl ?? img;
 
-    const { error } = await supabase
+    const { error: profileError } = await supabase
       .from("profiles")
       .update({
         name,
         nickname,
         phone,
         bio,
-        img: selectedAvatarUrl ?? img,
+        img: profileImg,
       })
       .eq("id", session.user.id);
 
-    if (!error) {
+    const { error: nicknameError } = await supabase
+      .from("public_profile_nicknames")
+      .update({
+        nickname,
+        profile_img: profileImg,
+      })
+      .eq("id", session.user.id);
+
+    if (!profileError && !nicknameError) {
       toast.success("✅ 프로필이 저장되었습니다");
       navigate("/mypage");
     } else {
-      toast.error("❌ 저장 실패: " + error.message);
+      toast.error("❌ 저장 실패");
+      console.error("Error:", profileError?.message, nicknameError?.message);
     }
   };
 
@@ -73,7 +89,7 @@ const EditProfile: React.FC = () => {
           </p>
 
           <div className="space-y-4">
-            {/* 프로필 이미지 선택 */}
+            {/* 프로필 이미지 미리보기 */}
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 rounded-full overflow-hidden border border-gray-300">
                 <img
@@ -83,13 +99,14 @@ const EditProfile: React.FC = () => {
                 />
               </div>
               <button
-                onClick={() => setSelectedAvatarUrl(AVATAR_URL)}
+                onClick={() => setIsModalOpen(true)}
                 className="text-sm text-blue-600 border border-blue-600 px-3 py-1 rounded hover:bg-blue-50"
               >
                 기본 이모티콘 선택
               </button>
             </div>
 
+            {/* 기본 입력 필드 */}
             <div>
               <label className="block text-sm font-medium text-gray-700">이름</label>
               <input
@@ -139,6 +156,38 @@ const EditProfile: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* 아바타 선택 모달 */}
+      {isModalOpen && (
+  <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
+    <div className="bg-white rounded-xl p-6 w-[420px] shadow-lg max-h-[90vh] overflow-y-auto">
+      <h2 className="text-lg font-bold mb-4 text-center">기본 이모티콘 선택</h2>
+      <div className="grid grid-cols-4 gap-4">
+        {avatarList.map((url) => (
+          <img
+            key={url}
+            src={url}
+            onClick={() => {
+              setSelectedAvatarUrl(url);
+              setIsModalOpen(false);
+            }}
+            className={`w-20 h-20 rounded-full cursor-pointer border-4 ${
+              selectedAvatarUrl === url ? "border-blue-500" : "border-transparent"
+            }`}
+            alt="아바타"
+          />
+        ))}
+      </div>
+      <button
+        onClick={() => setIsModalOpen(false)}
+        className="mt-6 w-full bg-gray-200 hover:bg-gray-300 text-sm py-2 rounded"
+      >
+        닫기
+      </button>
+    </div>
+  </div>
+)}
+
     </PageLayout>
   );
 };

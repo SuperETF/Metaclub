@@ -19,33 +19,33 @@ const Login: React.FC = () => {
 
     const createProfile = async () => {
       if (!user || !user.email_confirmed_at) return;
-
+    
       const { data: existing } = await supabase
         .from("profiles")
         .select("id, name, nickname, phone")
         .eq("id", user.id)
         .maybeSingle();
-
+    
       const isIncomplete =
         !existing ||
         !existing.name?.trim() ||
         !existing.nickname?.trim() ||
         !existing.phone?.trim();
-
+    
       if (isIncomplete) {
         const { data: temp } = await supabase
           .from("temp_profiles")
           .select("*")
           .eq("email", user.email)
           .maybeSingle();
-
+    
         if (!temp) {
           toast.error("회원가입 정보가 유실되었습니다. 다시 시도해주세요.");
           await supabase.auth.signOut();
           navigate("/signup");
           return;
         }
-
+    
         const { error: upsertError } = await supabase.from("profiles").upsert({
           id: user.id,
           email: user.email,
@@ -55,7 +55,7 @@ const Login: React.FC = () => {
           marketing: temp.marketing,
           agreement: temp.agreement,
         });
-
+    
         if (upsertError) {
           console.error("❌ 프로필 upsert 실패:", upsertError.message);
           toast.error("프로필 저장 실패: " + upsertError.message);
@@ -63,9 +63,25 @@ const Login: React.FC = () => {
           await supabase.from("temp_profiles").delete().eq("email", user.email);
         }
       }
-
+    
+      // ✅ 여기서 public_profile_nicknames 자동 생성 추가
+      const { data: profileExists } = await supabase
+        .from("public_profile_nicknames")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+    
+      if (!profileExists) {
+        await supabase.from("public_profile_nicknames").insert({
+          id: user.id,
+          nickname: existing?.nickname || "익명의 유저",
+          profile_img: "/default-profile.png",
+        });
+      }
+    
       navigate("/dashboard");
     };
+  
 
     createProfile();
   }, [user, sessionLoading, navigate]);
