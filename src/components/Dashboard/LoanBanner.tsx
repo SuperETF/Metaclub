@@ -64,35 +64,37 @@ const LoanBanner: React.FC = () => {
   return (
     <div className="overflow-hidden">
       <a
-        href={current.linkUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`block rounded-xl p-4 mb-3 flex items-center justify-between gap-4
-          bg-gradient-to-r ${current.bgColorClass}
-          transition-all duration-500 ease-in-out transform
-          ${fade ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"}
-        `}
-      >
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-blue-800 text-base sm:text-lg leading-snug">
-            {current.title}
-          </h3>
-          <p className="text-sm text-blue-700 mt-1 leading-relaxed whitespace-pre-line">
-            {current.description}
-          </p>
-        </div>
+  href={current.linkUrl}
+  target="_blank"
+  rel="noopener noreferrer"
+  className={`block rounded-xl p-4 mb-3 flex items-center justify-between gap-4
+    bg-blue-50
+    transition-all duration-500 ease-in-out transform
+    ${fade ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"}
+  `}
+>
 
-        <img
-          src={current.imageUrl}
-          alt="배너 이미지"
-          className="w-20 h-20 object-contain flex-shrink-0 border border-gray-200"
-          onError={(e) => {
-            console.warn("❌ 이미지 로딩 실패:", current.imageUrl);
-            e.currentTarget.src = "/fallback-banner.png"; // 필요한 경우 대체 이미지
-            e.currentTarget.classList.add("border-red-500");
-          }}
-        />
-      </a>
+  <div className="flex-1 min-w-0">
+    <h3 className="font-semibold text-blue-800 text-base sm:text-lg leading-snug">
+      {current.title}
+    </h3>
+    <p className="text-sm text-blue-700 mt-1 leading-relaxed whitespace-pre-line">
+      {current.description}
+    </p>
+  </div>
+
+  <img
+  src={current.imageUrl}
+  alt="배너 이미지"
+  className="w-20 h-20 object-contain flex-shrink-0"
+  onError={(e) => {
+    console.warn("❌ 이미지 로딩 실패:", current.imageUrl);
+    e.currentTarget.src = "/fallback-banner.png";
+  }}
+/>
+
+</a>
+
 
       <a
         href="https://tally.so/r/mJg0B7"
