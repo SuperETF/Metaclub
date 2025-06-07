@@ -26,24 +26,24 @@ const QuizRanking: React.FC = () => {
   useEffect(() => {
     const fetchRankingData = async () => {
       const { data: quizData, error } = await supabase
-        .from("quiz_rankings")
-        .select("user_id, score, grade")
+        .from("quiz_rankings") // ✅ 변경
+        .select("user_id, score, grade, rank") // ✅ rank 추가
         .eq("quiz_id", category)
-        .order("score", { ascending: false })
+        .order("rank", { ascending: true }) // ✅ 정렬 기준 변경
         .limit(30);
-
+    
       if (error || !quizData) {
         console.error("퀴즈 랭킹 조회 실패:", error?.message);
         return;
       }
-
+    
       const userIds = [...new Set(quizData.map((r) => r.user_id).filter(Boolean))];
-
+    
       const { data: profiles } = await supabase
         .from("public_profile_nicknames")
         .select("id, nickname, profile_img")
         .in("id", userIds);
-
+    
       const profileMap = new Map(
         (profiles ?? []).map((p) => [
           p.id,
@@ -53,7 +53,7 @@ const QuizRanking: React.FC = () => {
           },
         ])
       );
-
+    
       const combined: RankingItem[] = quizData.map((row) => ({
         userId: row.user_id,
         score: row.score,
@@ -61,21 +61,21 @@ const QuizRanking: React.FC = () => {
         nickname: profileMap.get(row.user_id)?.nickname ?? "Unknown",
         profileImg: profileMap.get(row.user_id)?.profileImg ?? "/default-profile.png",
       }));
-
+    
       if (myId && !combined.find((r) => r.userId === myId)) {
         const { data: myResult } = await supabase
-          .from("quiz_rankings")
+          .from("quiz_rankings") // ✅ 동일하게 변경
           .select("score, grade")
           .eq("quiz_id", category)
           .eq("user_id", myId)
           .maybeSingle();
-
+    
         const { data: myProfile } = await supabase
           .from("public_profile_nicknames")
           .select("nickname, profile_img")
           .eq("id", myId)
           .maybeSingle();
-
+    
         if (myResult && myProfile) {
           combined.push({
             userId: myId,
@@ -86,10 +86,10 @@ const QuizRanking: React.FC = () => {
           });
         }
       }
-
+    
       setRankings(combined);
     };
-
+    
     fetchRankingData();
   }, [category, myId]);
 
