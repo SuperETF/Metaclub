@@ -141,11 +141,18 @@ const ExamMain = () => {
             </span>
           </div>
           <div className="space-y-4">
-            {currentQuestionData.passage && (
-              <div className="bg-gray-50 border border-gray-200 p-3 rounded text-sm whitespace-pre-wrap">
-                {currentQuestionData.passage}
-              </div>
-            )}
+          {currentQuestionData.passage && (
+  <div className="bg-gray-50 border border-gray-200 p-3 rounded text-sm leading-relaxed text-gray-800 space-y-1">
+    {currentQuestionData.passage
+      .replace(/\\n/g, "\n")
+      .split("\n")
+      .map((line, idx) => (
+        <p key={idx}>{line}</p>
+      ))}
+  </div>
+)}
+
+
             <p className="text-base leading-relaxed">{currentQuestionData.question}</p>
             {currentQuestionData.image && (
               <div className="rounded-lg overflow-hidden bg-gray-50">
@@ -214,7 +221,7 @@ const ExamMain = () => {
               <span className="text-sm font-medium">
                 {Object.keys(selectedAnswers).length < questions.length
                   ? `${Object.keys(selectedAnswers).length}/${questions.length}`
-                  : "제출하기"}
+                  : "제출"}
               </span>
             </button>
           </div>
