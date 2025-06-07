@@ -6,6 +6,7 @@ import { useUser } from "@supabase/auth-helpers-react";
 interface Question {
   id: string;
   question: string;
+  passage?: string;
   options: Record<string, string>;
   correct_answer: string;
   explanation: string;
@@ -30,7 +31,6 @@ const ExamMain = () => {
 
   const subjectCodes = searchParams.get("subjects")?.split(",") ?? [];
 
-  // ✅ 로그인 상태 확인
   if (!user) {
     return (
       <div className="flex flex-col justify-center items-center h-screen text-center text-gray-700">
@@ -49,18 +49,13 @@ const ExamMain = () => {
   useEffect(() => {
     const fetchQuestions = async () => {
         const { data, error } = await supabase
-        .from("exam_questions_2025")
-        .select(`
-          id,
-          question,
-          options,
-          correct_answer,
-          explanation,
-          image:question_image_url
-        `)
-        .eq("exam_type", examType)
-        .in("subject_code", subjectCodes);
-      
+  .from("exam_questions_2025")
+  .select(`
+    id, question, passage, options, correct_answer, explanation, image:question_image_url
+  `)
+  .or(`exam_type.eq.${examType},exam_type.eq.all`)
+  .in("subject_code", subjectCodes)
+  .order("question_number", { ascending: true });
 
       if (error) {
         console.error(error);
@@ -126,9 +121,7 @@ const ExamMain = () => {
         <div className="flex justify-between items-center px-4 py-3">
           <div className="text-gray-700">←</div>
           <div className="text-lg font-bold">{examType}</div>
-          <div className={`text-base font-medium ${isTimerWarning ? "text-red-600" : "text-gray-700"}`}>
-            {formatTime(timeLeft)}
-          </div>
+          <div className={`text-base font-medium ${isTimerWarning ? "text-red-600" : "text-gray-700"}`}>{formatTime(timeLeft)}</div>
         </div>
         <div className="w-full px-4 py-2 bg-gray-100 flex justify-between items-center">
           <div className="text-sm font-medium">
@@ -148,6 +141,11 @@ const ExamMain = () => {
             </span>
           </div>
           <div className="space-y-4">
+            {currentQuestionData.passage && (
+              <div className="bg-gray-50 border border-gray-200 p-3 rounded text-sm whitespace-pre-wrap">
+                {currentQuestionData.passage}
+              </div>
+            )}
             <p className="text-base leading-relaxed">{currentQuestionData.question}</p>
             {currentQuestionData.image && (
               <div className="rounded-lg overflow-hidden bg-gray-50">
@@ -202,26 +200,23 @@ const ExamMain = () => {
               다음
             </button>
             <button
-  onClick={() => setShowConfirmModal(true)}
-  disabled={Object.keys(selectedAnswers).length < questions.length}
-  className={`flex items-center justify-center py-3 px-4 rounded-xl shadow-sm transition-all duration-200 ${
-    Object.keys(selectedAnswers).length < questions.length
-      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-      : "bg-blue-600 text-white hover:bg-blue-700"
-  }`}
->
-  <i
-    className={`fa-solid fa-paper-plane mr-2 ${
-      Object.keys(selectedAnswers).length < questions.length ? "text-gray-400" : "text-white"
-    }`}
-  />
-  <span className="text-sm font-medium">
-    {Object.keys(selectedAnswers).length < questions.length
-      ? `${Object.keys(selectedAnswers).length}/${questions.length}`
-      : "제출하기"}
-  </span>
-</button>
-
+              onClick={() => setShowConfirmModal(true)}
+              disabled={Object.keys(selectedAnswers).length < questions.length}
+              className={`flex items-center justify-center py-3 px-4 rounded-xl shadow-sm transition-all duration-200 ${
+                Object.keys(selectedAnswers).length < questions.length
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
+            >
+              <i className={`fa-solid fa-paper-plane mr-2 ${
+                Object.keys(selectedAnswers).length < questions.length ? "text-gray-400" : "text-white"
+              }`} />
+              <span className="text-sm font-medium">
+                {Object.keys(selectedAnswers).length < questions.length
+                  ? `${Object.keys(selectedAnswers).length}/${questions.length}`
+                  : "제출하기"}
+              </span>
+            </button>
           </div>
         </div>
 
