@@ -86,3 +86,9 @@
   outline: none !important;
   box-shadow: none !important;
 }
+
+/* src/index.css 또는 App.css 제일 하단에 추가 */
+html,
+body {
+  overflow-x: hidden;
+}

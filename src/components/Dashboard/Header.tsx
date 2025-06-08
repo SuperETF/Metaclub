@@ -1,4 +1,3 @@
-// ✅ src/components/Header.tsx
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useUser, useSessionContext } from "@supabase/auth-helpers-react";
@@ -30,6 +29,16 @@ const Header: React.FC = () => {
   }, [user]);
 
   const handleBack = () => {
+    // ✅ 퀴즈 결과 or 시험 결과 페이지에서는 무조건 대시보드로
+    if (
+      location.pathname.startsWith("/quiz-result") ||
+      (location.pathname.startsWith("/exam") && location.pathname.includes("/result"))
+    ) {
+      navigate("/dashboard");
+      return;
+    }
+
+    // ✅ 게시글에서 대시보드로 돌아갈 때 상태 복원
     if (
       location.pathname.startsWith("/post/") &&
       location.state?.from === "dashboard"
@@ -57,6 +66,7 @@ const Header: React.FC = () => {
     if (location.pathname.startsWith("/write")) return "글쓰기";
     if (location.pathname.startsWith("/education/write")) return "강의 등록";
     if (location.pathname.startsWith("/quiz-result")) return "퀴즈 결과";
+    if (location.pathname.includes("/exam") && location.pathname.includes("/result")) return "대시보드";
     return "대시보드";
   };
 

@@ -1,11 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../../../lib/supabaseClient";
+import { useUser } from "@supabase/auth-helpers-react";
 
 const ExamApplicationPage = () => {
   const [selectedExamType, setSelectedExamType] = useState("2급 전문");
   const [selectedSubjects, setSelectedSubjects] = useState<number[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const navigate = useNavigate();
+  const user = useUser();
+  const [resumeData, setResumeData] = useState<{ exam_type: string; subjects: string } | null>(null);
+  const [showResumeModal, setShowResumeModal] = useState(false);
+  const [pendingSubjectCodes, setPendingSubjectCodes] = useState<string>("");
 
   const examTypeMap: Record<string, string> = {
     "2급 전문": "lf2",
@@ -32,6 +38,26 @@ const ExamApplicationPage = () => {
 
   const requiredSubject = subjects.find((s) => s.requiredFor === selectedExamType);
   const maxSelectable = (selectedExamType === "2급 전문" || selectedExamType === "2급 생활") ? 5 : 4;
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchTempSave = async () => {
+      const { data, error } = await supabase
+        .from("exam_temp_saves")
+        .select("exam_type, subjects")
+        .eq("user_id", user.id)
+        .limit(1)
+        .single();
+
+      if (data && !error) {
+        setResumeData({
+          exam_type: data.exam_type,
+          subjects: data.subjects,
+        });
+      }
+    };
+    fetchTempSave();
+  }, [user]);
 
   const handleSubjectToggle = (id: number) => {
     const subject = subjects.find((s) => s.id === id);
@@ -67,7 +93,13 @@ const ExamApplicationPage = () => {
       .join(",");
 
     const examTypeCode = examTypeMap[selectedExamType];
-    navigate(`/exam/${examTypeCode}/main?subjects=${subjectCodes}`);
+
+    if (resumeData) {
+      setPendingSubjectCodes(subjectCodes);
+      setShowResumeModal(true);
+    } else {
+      navigate(`/exam/${examTypeCode}/main?subjects=${subjectCodes}`);
+    }
   };
 
   const filteredSubjects = subjects.filter(
@@ -93,6 +125,7 @@ const ExamApplicationPage = () => {
               {toastMessage}
             </div>
           )}
+
 
           <section className="mb-6">
             <h3 className="text-md font-semibold mb-2">응시자 유의사항</h3>
@@ -166,6 +199,40 @@ const ExamApplicationPage = () => {
             다음 단계로
           </button>
         </div>
+
+        {showResumeModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md text-center">
+              <h2 className="text-lg font-semibold mb-4">임시 저장된 시험이 있습니다.</h2>
+              <p className="text-sm text-gray-700 mb-6">이어서 시험을 계속하시겠습니까?</p>
+              <div className="flex justify-around">
+              <button
+  onClick={() => {
+    if (resumeData) {
+      navigate(`/exam/${resumeData.exam_type}/main?subjects=${resumeData.subjects}`);
+    }
+  }}
+  className="px-4 py-2 bg-blue-600 text-white rounded"
+>
+  예, 이어서 풀기
+</button>
+
+                <button
+                  onClick={async () => {
+                    if (user?.id) {
+                      await supabase.from("exam_temp_saves").delete().eq("user_id", user.id);
+                    }
+                    const examTypeCode = examTypeMap[selectedExamType];
+                    navigate(`/exam/${examTypeCode}/main?subjects=${pendingSubjectCodes}`);
+                  }}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded"
+                >
+                  아니오, 새로 시작
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

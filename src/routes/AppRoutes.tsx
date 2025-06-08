@@ -53,7 +53,7 @@ const AppRoutes: React.FC = () => {
         {/* ✅ 생체 2급 시험 경로 */}
         <Route path="/exam/:examType/start" element={<LF2ExamStart />} />
         <Route path="/exam/:examType/main" element={<LF2ExamMain />} />
-        <Route path="/exam/:examType/result" element={<LF2ExamResult />} />
+        <Route path="/exam/:examType/result/:resultId" element={<LF2ExamResult />} />
       </Route>
 
       {/* ✅ 보호 라우트 그룹 (Layout + 인증 필요) */}
